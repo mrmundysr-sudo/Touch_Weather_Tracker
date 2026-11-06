@@ -11,3 +11,10 @@
 9. **Maven Central 429s** from the build sandbox's proxy needed retries; CI is unaffected.
 10. FEMA shelter feed currently supplies no pet codes, so all shelters show pet policy "not reported".
 11. **Locked app = no background alerts (temporary).** Current build: a user who has not unlocked receives no app notifications. The owner has approved the intended behavior — alert notifications continue while locked — and scheduled it for the next update (docs/MONETIZATION.md).
+
+## iOS-specific (claude/ios)
+12. **iOS has never been run.** No macOS/Simulator/device was available to the developer. Shared logic (`TWCore`) is compiled and tested on Linux; the app and widgets are compiled only by the macOS CI workflow.
+13. **Unsigned builds cannot be installed on an iPhone.** Apple signing (owner's developer account) is required; see ios/README.md. Without the App Group entitlement widgets cannot read app data.
+14. **Background work is opportunistic.** `BGAppRefreshTask` has no fixed cadence; notifications from background polling can be late or skipped. Critical Alerts need an Apple entitlement and are not used.
+15. **AdMob/UMP/StoreKit need owner configuration** (test ids in use; products not created); a privacy-policy URL is required for App Review.
+16. **Widgets:** iOS has no 1×1/3×1/4×1 sizes; closest equivalents are used (documented in FEATURE_CHECKLIST_IOS.md).

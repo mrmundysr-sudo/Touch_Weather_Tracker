@@ -71,7 +71,7 @@ final class AppModel: ObservableObject {
         let cachedW = repo.cachedWeather(place.id)
         if today.weather?.value?.placeId != place.id { today.weather = cachedW.map { Loaded(value: $0.value, fetchedAtMs: $0.fetchedAtMs) } }
         today.loading = true
-        todayTask = Task { [repo] in
+        todayTask = Task { [repo, self] in
             async let w = repo.weather(place, force: force)
             async let a = repo.alertsFor(place, force: force)
             let wr = await w, ar = await a
@@ -94,7 +94,7 @@ final class AppModel: ObservableObject {
         resources = ResourcesState(); power = PowerState()
         refreshToday(force: true)
         reloadWidgets()
-        Task { [repo] in
+        Task { [repo, self] in
             if let h = repo.home() { await withTimeout(25) { _ = await repo.weather(h, force: true); _ = await repo.alertsFor(h, force: true) } }
             reloadWidgets()
         }
@@ -119,7 +119,7 @@ final class AppModel: ObservableObject {
         let s = scope ?? feed.scope
         feedTask?.cancel()
         feed.scope = s; feed.loading = true
-        feedTask = Task { [repo] in
+        feedTask = Task { [repo, self] in
             let r = await repo.feed(s, force: force)
             if Task.isCancelled { return }
             if let v = r.value { index(v.map(\.alert)) }
@@ -129,7 +129,7 @@ final class AppModel: ObservableObject {
 
     /// Nationwide active alerts for the map's warning polygons (kept separate from the Alerts tab's chosen scope).
     func loadMapAlerts() {
-        Task { [repo] in
+        Task { [repo, self] in
             let r = await repo.feed(.all)
             if let v = r.value { mapAlerts = v.map(\.alert); index(mapAlerts) }
         }
@@ -140,7 +140,7 @@ final class AppModel: ObservableObject {
         search.query = q; search.error = nil
         searchTask?.cancel()
         if q.trimmingCharacters(in: .whitespaces).count < 3 { search.results = []; search.searched = false; search.loading = false; return }
-        searchTask = Task {
+        searchTask = Task { [self] in
             try? await Task.sleep(nanoseconds: 450_000_000)
             if Task.isCancelled { return }
             search.loading = true
@@ -184,7 +184,7 @@ final class AppModel: ObservableObject {
     // MARK: Storms
     func loadStorms(force: Bool = false) {
         storms.loading = true
-        Task { [repo] in
+        Task { [repo, self] in
             let r = await repo.storms(force: force)
             let hurr = ((try? await NwsSource.alertsAll()) ?? []).filter { $0.event.hasPrefix("Hurricane") }
             var ev: EventSignal?
@@ -197,14 +197,14 @@ final class AppModel: ObservableObject {
         if !force, let b = bundles[storm.id], Units.nowMs() - b.fetchedAtMs < 5 * 60_000 { return }
         if bundleLoading.contains(storm.id) { return }
         bundleLoading.insert(storm.id)
-        Task { [repo] in
+        Task { [repo, self] in
             let b = await repo.stormBundle(storm)
             bundles[storm.id] = b; bundleLoading.remove(storm.id)
         }
     }
 
     func loadReport(place: Place, bundle: StormBundle) {
-        Task { [repo] in
+        Task { [repo, self] in
             let r = await repo.stormReport(for: place, bundle: bundle)
             reports["\(bundle.storm.id)|\(place.id)"] = r
         }
@@ -225,7 +225,7 @@ final class AppModel: ObservableObject {
     func loadResources() {
         guard let place = repo.selected() else { return }
         resources.loading = true
-        Task { [repo] in
+        Task { [repo, self] in
             let b = await repo.resources(place)
             let br: Result<[BlueRoofMission], Error> = await Result { try await BlueRoofSource.activeMissions(state: place.state) }
             resources = ResourcesState(bundle: b, blueRoof: try? br.get(), blueRoofError: br.failureMessage, loading: false)
@@ -235,7 +235,7 @@ final class AppModel: ObservableObject {
     func loadPower(force: Bool = false) {
         guard let place = repo.selected() else { return }
         power.loading = true
-        Task { [repo] in
+        Task { [repo, self] in
             let b = await repo.power(place, force: force)
             let n = await repo.nationalOutages()
             power = PowerState(bundle: b, national: n, loading: false)

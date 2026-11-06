@@ -21,3 +21,11 @@ The owner has decided alert notifications should continue while the app is locke
 4. All-apps subscription: a Play subscription belongs to one app. Sharing it across the portfolio requires a mechanism you own (Play's multi-app options or a server that verifies purchases across apps); this repo deliberately adds no server.
 
 On a sideloaded debug build the unlock screen states plainly that Google Play billing isn't available; the 4-ad unlock works with test ads.
+
+## iOS (claude/ios)
+Same model and rules as Android, implemented in `ios/TouchWeatherTracker/Core/Monetization.swift` (StoreKit 2 + Google Mobile Ads + UMP). Owner setup, none of which exists yet:
+1. AdMob: an iOS app + **rewarded** ad unit. Replace `GADApplicationIdentifier` in `ios/project.yml` (Info.plist) and `Monetization.rewardedUnit`. Defaults are Google's published TEST ids.
+2. App Store Connect products for `com.mundymorning.touchweathertracker`: non-consumable **`ad_free_premium`** and auto-renewable subscription **`all_apps_subscription`** (App Review also requires a privacy-policy URL and subscription terms in the app and listing).
+3. The subscription is per-app in StoreKit as well; a true all-apps entitlement needs a mechanism you own (e.g. a subscription group shared across apps or a server verifying receipts).
+4. Entitlements are re-derived from `Transaction.currentEntitlements` on launch/foreground, so refunds/expiry lock the app again. "Restore purchases" calls `AppStore.sync()`.
+Locked app (iOS): no UI beyond the unlock screen, no background refresh, no notifications, widgets show "Locked". Alerts-while-locked is the approved next-update item for both platforms.

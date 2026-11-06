@@ -258,8 +258,8 @@ public final class Repository: @unchecked Sendable {
 }
 
 extension Result {
-    init(_ body: () async throws -> Success) async where Failure == Error { do { self = .success(try await body()) } catch { self = .failure(error) } }
-    var failureMessage: String? { if case .failure(let e) = self { return e.localizedDescription }; return nil }
+    public init(_ body: () async throws -> Success) async where Failure == Error { do { self = .success(try await body()) } catch { self = .failure(error) } }
+    public var failureMessage: String? { if case .failure(let e) = self { return e.localizedDescription }; return nil }
 }
 
 /// Decides which alerts to notify about. Notifies for NEW alerts, material updates (different expiry/text/type) and early endings — never on every poll,
