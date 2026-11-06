@@ -10,4 +10,4 @@
 8. **Resources are not cached offline.**
 9. **Maven Central 429s** from the build sandbox's proxy needed retries; CI is unaffected.
 10. FEMA shelter feed currently supplies no pet codes, so all shelters show pet policy "not reported".
-11. **Locked app = no background alerts.** Per the owner's monetization decision a user who has not unlocked receives no app notifications or widget data; mitigated only by in-app WEA guidance. Owner may revisit (docs/MONETIZATION.md).
+11. **Locked app = no background alerts (temporary).** Current build: a user who has not unlocked receives no app notifications. The owner has approved the intended behavior — alert notifications continue while locked — and scheduled it for the next update (docs/MONETIZATION.md).

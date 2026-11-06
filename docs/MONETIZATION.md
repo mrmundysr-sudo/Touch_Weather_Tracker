@@ -11,8 +11,8 @@ Implemented in `billing/Monetization.kt` and `ui/SettingsScreens.kt` (`PaywallSc
 - **There are no banner or interstitial ads.** The only ads are the rewarded ads the user chooses to watch on the unlock screen.
 - "Restore purchases" re-queries Google Play (in-app and subscriptions). Billing state is cached and re-checked on every launch.
 
-## Safety note for the owner
-Because a locked app sends no notifications and refreshes no data, a user who has not unlocked gets no app alerts. The unlock screen tells them to keep Wireless Emergency Alerts on. This follows your instruction that the app doesn't work without unlocking; if you'd rather keep Home-warning notifications running while locked, it's a one-line change in `PollWorker` (remove the `premiumActive` check) — your call.
+## Alerts while locked — planned for the NEXT update (owner-approved, not yet built)
+The owner has decided alert notifications should continue while the app is locked. **That is not implemented in this build:** today a locked app sends no notifications and refreshes no data, so a locked user gets no app alerts (the unlock screen tells them to keep Wireless Emergency Alerts on). Next update: keep the alert polling/notification path (`PollWorker` → `AlertEngine`) running while locked and leave everything else (UI, widgets, other background work) locked. Implementation note: the lock check is the `premiumActive` guard at the top of `PollWorker.doWork`; the change is to gate only the non-alert work behind it.
 
 ## What the owner must configure before any release (none of this exists yet)
 1. AdMob app + a **rewarded** ad unit → set `admobAppId` and `admobRewardedUnit` in `gradle.properties` (defaults are Google's published TEST ids, so debug builds never serve live ads).
