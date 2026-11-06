@@ -44,11 +44,11 @@ data class WData(
 object WidgetKit {
     fun repo(ctx: Context) = (ctx.applicationContext as TouchWeatherApp).repo
 
-    /** [pickedWidgetId] is used by widgets that let the user choose a place; the others follow the app's selected place. */
+    /** [pickedWidgetId] is used by widgets that let the user choose a place; the others always show the Home place. */
     fun load(ctx: Context, pickedWidgetId: Int? = null): WData {
         val r = repo(ctx)
         val locked = !r.prefs.premiumActive
-        val place = pickedWidgetId?.let { id -> r.prefs.widgetPlace(id)?.let { pid -> r.places.value.firstOrNull { it.id == pid } } } ?: if (pickedWidgetId == null) r.selected() else null
+        val place = pickedWidgetId?.let { id -> r.prefs.widgetPlace(id)?.let { pid -> r.places.value.firstOrNull { it.id == pid } } } ?: if (pickedWidgetId == null) (r.home() ?: r.selected()) else null
         val w = place?.let { r.cachedWeather(it.id)?.value }
         val alerts = place?.let { r.store.read("alerts_${it.id}", AlertSet.serializer())?.alerts }
         val st = r.store.read("storms", Cached.serializer(kotlinx.serialization.builtins.ListSerializer(StormSnapshot.serializer())))

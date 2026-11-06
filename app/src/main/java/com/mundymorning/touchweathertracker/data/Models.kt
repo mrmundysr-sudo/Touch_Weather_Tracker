@@ -36,13 +36,17 @@ data class Place(
     val isDefault: Boolean = false,
     val subtitle: String? = null,
     val state: String? = null,       // USPS abbreviation
+    val city: String? = null,        // nearest NWS city, used for compact "City, ST" labels (widgets)
     val countyName: String? = null,
     val countyFips: String? = null,  // 5-digit state+county FIPS
     val timeZone: String? = null,
     val usesDeviceLocation: Boolean = false,
     val alertPrefs: AlertPrefs = AlertPrefs(),
     val utility: UtilityChoice? = null,
-)
+) {
+    /** "City, ST" for compact displays; falls back to the saved name until the city is known. */
+    val cityState: String get() = when { city != null && state != null -> "$city, $state"; city != null -> city; else -> name }
+}
 
 /** A favourite state or county followed as a broader area of interest. */
 @Serializable

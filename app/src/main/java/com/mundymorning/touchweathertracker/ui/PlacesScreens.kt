@@ -101,13 +101,18 @@ fun PlacesScreen(vm: AppViewModel, onBack: () -> Unit, onAdd: (Boolean) -> Unit,
             items(places, key = { it.id }) { p ->
                 TwCard(onClick = { vm.selectPlace(p.id); onOpenPlace() }) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(if (p.isHome) Icons.Filled.Home else if (p.usesDeviceLocation) Icons.Filled.MyLocation else Icons.Filled.Place, null, tint = MaterialTheme.colorScheme.primary)
-                        Spacer(Modifier.width(12.dp))
+                        // Empty home = not Home (tap to make it Home); filled home = this is Home. The app and widgets follow Home automatically.
+                        IconButton(onClick = { if (!p.isHome) { vm.makeHome(p.id); vm.toast("${p.cityState} is now your Home") } }, modifier = Modifier.size(48.dp)) {
+                            Icon(if (p.isHome) Icons.Filled.Home else Icons.Outlined.Home, if (p.isHome) "${p.name} is your Home" else "Make ${p.name} your Home",
+                                tint = if (p.isHome) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline, modifier = Modifier.size(28.dp))
+                        }
+                        Spacer(Modifier.width(8.dp))
                         Column(Modifier.weight(1f)) {
                             Text(p.name, style = MaterialTheme.typography.titleMedium)
                             Text(listOfNotNull(p.subtitle, p.countyName).joinToString(" · ").ifBlank { p.state.orEmpty() }, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             Row(Modifier.padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                 if (p.isHome) AssistChip(onClick = {}, label = { Text("Home") }); if (p.isDefault && !p.isHome) AssistChip(onClick = {}, label = { Text("Default") })
+                                if (p.usesDeviceLocation) AssistChip(onClick = {}, label = { Text("Device location") }, leadingIcon = { Icon(Icons.Filled.MyLocation, null, Modifier.size(16.dp)) })
                                 if (p.alertPrefs.notify) AssistChip(onClick = {}, label = { Text("Notifications on") }, leadingIcon = { Icon(Icons.Filled.NotificationsActive, null, Modifier.size(16.dp)) })
                             }
                         }
@@ -115,13 +120,12 @@ fun PlacesScreen(vm: AppViewModel, onBack: () -> Unit, onAdd: (Boolean) -> Unit,
                     Row(Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                         TextButton(onClick = { edit = p }) { Icon(Icons.Outlined.Notifications, null, Modifier.size(18.dp)); Spacer(Modifier.width(4.dp)); Text("Alerts") }
                         TextButton(onClick = { rename = p }) { Text("Rename") }
-                        if (!p.isHome) TextButton(onClick = { vm.repo.setHome(p.id) }) { Text("Make Home") }
-                        if (!p.isDefault) TextButton(onClick = { vm.repo.setDefault(p.id) }) { Text("Default") }
+                        if (!p.isDefault && !p.isHome) TextButton(onClick = { vm.repo.setDefault(p.id) }) { Text("Default") }
                     }
                     Row { TextButton(onClick = { remove = p }) { Text("Remove", color = MaterialTheme.colorScheme.error) } }
                 }
             }
-            item { OutlinedButton(onClick = { onAdd(true) }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Icon(Icons.Filled.Home, null); Spacer(Modifier.width(8.dp)); Text(if (places.any { it.isHome }) "Change Home location" else "Set Home") } }
+            item { Text("Tap the home icon on any place to make it your Home. Your forecast, alerts and Home widgets switch to it right away.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
             item { HorizontalDivider(Modifier.padding(vertical = 4.dp)) }
             item {
                 Text("Favorite states & counties", style = MaterialTheme.typography.titleMedium)

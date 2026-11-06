@@ -24,7 +24,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         val app = application as TouchWeatherApp
         request = fromIntent(intent)
-        if (app.repo.prefs.onboarded) Scheduler.schedule(this, app.repo.prefs.eventModeActiveStorm != null)
+        if (app.repo.prefs.onboarded) { Scheduler.schedule(this, app.repo.prefs.eventModeActiveStorm != null); if (app.repo.prefs.premiumActive) Scheduler.refreshNow(this) }
         // Ads consent + SDK start, and billing connection (entitlements are re-checked on each launch).
         app.monetization.startAds(this)
         app.monetization.startBilling()

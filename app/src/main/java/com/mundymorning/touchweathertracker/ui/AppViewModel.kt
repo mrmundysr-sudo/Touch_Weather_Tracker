@@ -80,6 +80,18 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         return runCatching { NwsSource.hazardousOutlook(office) }.getOrNull()
     }
 
+    /** Make [id] the Home place: Today switches to it, notifications for it are enabled, and widgets refresh to it right away. */
+    fun makeHome(id: String) {
+        repo.setHome(id)
+        repo.select(id)
+        resources.value = ResourcesState(); power.value = PowerState()
+        refreshToday(force = true)
+        viewModelScope.launch {
+            repo.places.value.firstOrNull { it.id == id }?.let { p -> runCatching { repo.weather(p, true); repo.alertsFor(p, true) } }
+            runCatching { com.mundymorning.touchweathertracker.widget.WidgetUpdater.updateAll(getApplication()) }
+        }
+    }
+
     fun selectPlace(id: String) { repo.select(id); resources.value = ResourcesState(); power.value = PowerState(); refreshToday(); }
 
     // ------------------------------------------------------------------ Alerts feed

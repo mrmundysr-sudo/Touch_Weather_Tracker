@@ -11,7 +11,7 @@
     <string name="widget_today_name">Today</string>
     <string name="widget_today_desc">Temperature, high/low, feels-like, wind and the next hours. Updated periodically by Android, not instantly.</string>
     <string name="widget_five_day_name">5-Day</string>
-    <string name="widget_five_day_desc">Five-day forecast with icons and highs/lows. Updated periodically by Android, not instantly.</string>
+    <string name="widget_five_day_desc">Compact five-day forecast with icons and highs/lows. Updated periodically by Android, not instantly.</string>
     <string name="widget_saved_name">Saved Place</string>
     <string name="widget_saved_desc">Weather and the top active alert for a place you choose. Updated periodically by Android, not instantly.</string>
     <string name="widget_saved_wide_name">Saved Place · Wide</string>

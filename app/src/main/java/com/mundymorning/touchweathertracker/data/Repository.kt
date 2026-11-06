@@ -66,12 +66,12 @@ class Repository(private val app: Context) {
         val makeHome = asHome || first
         var p = Place(
             id = UUID.randomUUID().toString(), name = name, lat = lat, lon = lon, subtitle = subtitle,
-            isHome = makeHome, isDefault = makeHome, state = enriched?.state, countyFips = enriched?.countyFips, timeZone = enriched?.timeZone,
+            isHome = makeHome, isDefault = makeHome, state = enriched?.state, city = enriched?.city, countyFips = enriched?.countyFips, timeZone = enriched?.timeZone,
             usesDeviceLocation = device,
             alertPrefs = if (makeHome) AlertPrefs(notify = true, warnings = true) else AlertPrefs(),
         )
         var list = _places.value
-        if (makeHome) list = list.map { it.copy(isHome = false, isDefault = false, alertPrefs = if (it.isHome) it.alertPrefs.copy(notify = false) else it.alertPrefs) }
+        if (makeHome) list = list.map { it.copy(isHome = false, isDefault = false) }  // keep the old Home's alert settings: never silently drop warnings
         savePlaces(list + p)
         if (makeHome || first) select(p.id)
         return p
@@ -118,8 +118,8 @@ class Repository(private val app: Context) {
             store.write("weather_${place.id}", Cached.serializer(WeatherData.serializer()), Cached(data, data.fetchedAtMs))
             // Keep place metadata (time zone, county) current without clobbering user edits.
             val cur = _places.value.firstOrNull { it.id == place.id }
-            if (cur != null && (cur.timeZone != pt.timeZone || cur.countyFips != pt.countyFips || cur.state != pt.state)) {
-                updatePlace(cur.copy(timeZone = pt.timeZone ?: cur.timeZone, countyFips = pt.countyFips ?: cur.countyFips, state = pt.state ?: cur.state))
+            if (cur != null && (cur.timeZone != pt.timeZone || cur.countyFips != pt.countyFips || cur.state != pt.state || cur.city != pt.city)) {
+                updatePlace(cur.copy(timeZone = pt.timeZone ?: cur.timeZone, countyFips = pt.countyFips ?: cur.countyFips, state = pt.state ?: cur.state, city = pt.city ?: cur.city))
             }
             Loaded(data, data.fetchedAtMs)
         } catch (e: Exception) {
