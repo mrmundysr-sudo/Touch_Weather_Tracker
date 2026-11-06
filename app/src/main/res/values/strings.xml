@@ -1,9 +1,21 @@
 <resources>
     <string name="app_name">Touch Weather Tracker</string>
-    <string name="widget_everyday_name">Everyday Weather</string>
-    <string name="widget_everyday_desc">Current conditions, high/low and the next few hours. Updated periodically by Android, not instantly.</string>
+    <string name="widget_temp_small_name">Temp · Small</string>
+    <string name="widget_temp_small_desc">Icon and temperature for your selected place. Updated periodically by Android, not instantly.</string>
+    <string name="widget_temp_wide_name">Temp · Wide</string>
+    <string name="widget_temp_wide_desc">Temperature, place and update time. Updated periodically by Android, not instantly.</string>
+    <string name="widget_temp_tall_name">Temp · Tall</string>
+    <string name="widget_temp_tall_desc">Large temperature, condition icon, place and high/low. Updated periodically by Android, not instantly.</string>
+    <string name="widget_hourly_name">Hourly</string>
+    <string name="widget_hourly_desc">Current conditions plus the next five hours. Updated periodically by Android, not instantly.</string>
+    <string name="widget_today_name">Today</string>
+    <string name="widget_today_desc">Temperature, high/low, feels-like, wind and the next hours. Updated periodically by Android, not instantly.</string>
+    <string name="widget_five_day_name">5-Day</string>
+    <string name="widget_five_day_desc">Five-day forecast with icons and highs/lows. Updated periodically by Android, not instantly.</string>
     <string name="widget_saved_name">Saved Place</string>
-    <string name="widget_saved_desc">Weather and active alerts for a place you choose. Updated periodically by Android, not instantly.</string>
+    <string name="widget_saved_desc">Weather and the top active alert for a place you choose. Updated periodically by Android, not instantly.</string>
+    <string name="widget_saved_wide_name">Saved Place · Wide</string>
+    <string name="widget_saved_wide_desc">One-row weather and alert status for a place you choose. Updated periodically by Android, not instantly.</string>
     <string name="widget_storm_name">Storm Watch</string>
     <string name="widget_storm_desc">Active hurricane status, distance and the latest official advisory time. Updated periodically by Android, not instantly.</string>
 </resources>

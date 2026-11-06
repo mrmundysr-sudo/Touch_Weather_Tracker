@@ -43,7 +43,8 @@ class WidgetConfigActivity : ComponentActivity() {
                                     lifecycleScope.launch {
                                         runCatching { repo.weather(p); repo.alertsFor(p) }
                                         val gid = GlanceAppWidgetManager(this@WidgetConfigActivity).getGlanceIdBy(widgetId)
-                                        SavedPlaceWidget().update(this@WidgetConfigActivity, gid)
+                                        val cls = android.appwidget.AppWidgetManager.getInstance(this@WidgetConfigActivity).getAppWidgetInfo(widgetId)?.provider?.className.orEmpty()
+                                        if (cls.endsWith("SavedPlaceWideReceiver")) SavedPlaceWideWidget().update(this@WidgetConfigActivity, gid) else SavedPlaceWidget().update(this@WidgetConfigActivity, gid)
                                         setResult(Activity.RESULT_OK, Intent().putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, widgetId))
                                         finish()
                                     }

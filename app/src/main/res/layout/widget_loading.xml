@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent" android:layout_height="match_parent" android:background="#0B2A4A" android:padding="12dp">
+    android:layout_width="match_parent" android:layout_height="match_parent" android:background="@drawable/widget_bg_day" android:padding="10dp">
     <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center"
-        android:text="Loading weather…" android:textColor="#FFFFFF" android:textSize="14sp"/>
+        android:text="Loading weather…" android:textColor="#FFFFFF" android:textSize="13sp"/>
 </FrameLayout>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="match_parent" android:background="@drawable/widget_bg_day" android:padding="10dp">
+<LinearLayout android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical">
+<TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Your place" android:textColor="#FFFFFFFF" android:textSize="12sp" android:maxLines="1" android:textStyle="bold"/>
+<LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical"><ImageView android:layout_width="30dp" android:layout_height="30dp" android:src="@drawable/wx_partly_day" android:importantForAccessibility="no"/><TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="72°" android:textColor="#FFFFFFFF" android:textSize="26sp" android:maxLines="1" android:textStyle="bold"/></LinearLayout>
+<TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Partly Cloudy" android:textColor="#CCFFFFFF" android:textSize="11sp" android:maxLines="1"/>
+<LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginTop="4dp"><ImageView android:layout_width="17dp" android:layout_height="17dp" android:src="@drawable/wx_alert" android:importantForAccessibility="no"/><TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="No active alerts found" android:textColor="#CCFFFFFF" android:textSize="10sp" android:maxLines="1"/></LinearLayout>
+<TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Updated 2:30 PM" android:textColor="#CCFFFFFF" android:textSize="9sp" android:maxLines="1"/>
+</LinearLayout>
+</FrameLayout>

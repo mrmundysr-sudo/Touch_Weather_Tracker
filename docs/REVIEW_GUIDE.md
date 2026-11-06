@@ -12,7 +12,7 @@ Install the debug APK from the AutoBuild artifact (`Touch-Weather-Tracker-debug-
 7. **Resources** – pick a place near an active disaster for best results: FEMA declarations, shelters (pet icons), recovery centers, food/water/charging guidance, Blue Roof, and **Power outage** (utility, MassOutage county/national).
 8. **Settings** – notification categories, test notification, event-mode toggle, premium status, data sources.
 9. **Locked state** – after onboarding the app shows the unlock screen only: watch an ad (test ad) four times → 24 h of full use (it re-locks when the time ends); buy/subscribe need Play Console setup (docs/MONETIZATION.md). There are no banner ads anywhere.
-10. **Widgets** – add all three from the launcher; Saved Place asks which place.
+10. **Widgets** – open the launcher widget picker: nine styles under Touch Weather Tracker (Temp Small/Wide/Tall, Hourly, Today, 5-Day, Saved Place, Saved Place Wide, Storm Watch). Check the previews, add several, resize them, confirm each shows its update time; Saved Place styles ask which place. Background changes with night and with an active warning.
 
 ## Known gaps to decide on before store submission
 See docs/FEATURE_CHECKLIST.md (ECMWF, strings localization, device-verified accessibility, cached resources) and docs/knowledge/KNOWN_ISSUES.md.

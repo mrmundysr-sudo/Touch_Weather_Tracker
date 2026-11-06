@@ -26,13 +26,37 @@
             <intent-filter><action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" /></intent-filter>
         </activity>
 
-        <receiver android:name=".widget.EverydayWeatherReceiver" android:label="@string/widget_everyday_name" android:exported="true">
+        <receiver android:name=".widget.TempSmallReceiver" android:label="@string/widget_temp_small_name" android:exported="true">
             <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
-            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_everyday_info" />
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_temp_small_info" />
+        </receiver>
+        <receiver android:name=".widget.TempWideReceiver" android:label="@string/widget_temp_wide_name" android:exported="true">
+            <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_temp_wide_info" />
+        </receiver>
+        <receiver android:name=".widget.TempTallReceiver" android:label="@string/widget_temp_tall_name" android:exported="true">
+            <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_temp_tall_info" />
+        </receiver>
+        <receiver android:name=".widget.HourlyReceiver" android:label="@string/widget_hourly_name" android:exported="true">
+            <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_hourly_info" />
+        </receiver>
+        <receiver android:name=".widget.TodayReceiver" android:label="@string/widget_today_name" android:exported="true">
+            <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_today_info" />
+        </receiver>
+        <receiver android:name=".widget.FiveDayReceiver" android:label="@string/widget_five_day_name" android:exported="true">
+            <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_five_day_info" />
         </receiver>
         <receiver android:name=".widget.SavedPlaceReceiver" android:label="@string/widget_saved_name" android:exported="true">
             <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
             <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_saved_info" />
+        </receiver>
+        <receiver android:name=".widget.SavedPlaceWideReceiver" android:label="@string/widget_saved_wide_name" android:exported="true">
+            <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_saved_wide_info" />
         </receiver>
         <receiver android:name=".widget.StormWatchReceiver" android:label="@string/widget_storm_name" android:exported="true">
             <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>

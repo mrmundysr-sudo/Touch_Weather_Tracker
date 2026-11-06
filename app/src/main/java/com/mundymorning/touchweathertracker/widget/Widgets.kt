@@ -1,177 +1,314 @@
 package com.mundymorning.touchweathertracker.widget
 
 import android.content.Context
-import android.content.Intent
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.glance.*
-import androidx.glance.action.actionStartActivity
-import androidx.glance.action.clickable
 import androidx.glance.appwidget.*
-import androidx.glance.appwidget.action.actionStartActivity
 import androidx.glance.layout.*
-import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
-import androidx.glance.text.TextStyle
-import androidx.glance.color.ColorProvider
-import androidx.glance.unit.ColorProvider
-import com.mundymorning.touchweathertracker.MainActivity
-import com.mundymorning.touchweathertracker.TouchWeatherApp
+import com.mundymorning.touchweathertracker.R
 import com.mundymorning.touchweathertracker.core.Geo
 import com.mundymorning.touchweathertracker.core.Units
-import com.mundymorning.touchweathertracker.data.*
+import com.mundymorning.touchweathertracker.data.AlertLevel
+import com.mundymorning.touchweathertracker.domain.StormReportBuilder
 import com.mundymorning.touchweathertracker.source.ActiveStorm
+import com.mundymorning.touchweathertracker.ui.groupDays
 import kotlin.math.roundToInt
 
-private val BG = ColorProvider(day = Color(0xFFEAF3FB), night = Color(0xFF0E1D2F))
-private val FG = ColorProvider(day = Color(0xFF0B2239), night = Color(0xFFEAF3FB))
-private val MUTED = ColorProvider(day = Color(0xFF45607B), night = Color(0xFFA7BBD0))
-private val ALERT = ColorProvider(day = Color(0xFFB3261E), night = Color(0xFFFFB4AB))
-private val SMALL = DpSize(110.dp, 110.dp)
-private val WIDE = DpSize(250.dp, 110.dp)
-private val TALL = DpSize(250.dp, 220.dp)
-
-private fun t(size: Int, bold: Boolean = false, color: ColorProvider = FG) = TextStyle(color = color, fontSize = size.sp, fontWeight = if (bold) FontWeight.Bold else FontWeight.Normal)
-
-private fun repo(ctx: Context) = (ctx.applicationContext as TouchWeatherApp).repo
-
-private fun open(tab: String, placeId: String? = null) = actionStartActivity(
-    Intent().setClassName("com.mundymorning.touchweathertracker", "com.mundymorning.touchweathertracker.MainActivity")
-        .putExtra(MainActivity.EXTRA_TAB, tab).also { i -> placeId?.let { i.putExtra(MainActivity.EXTRA_PLACE, it) } }
-        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-)
-
-private fun stamp(ms: Long?, tz: String?) = ms?.let { "Updated ${Units.clock(it, tz)}" } ?: "Not updated yet"
-
-private fun locked(ctx: Context) = !repo(ctx).prefs.premiumActive
-
+/** Wraps lock / no-place handling so each widget only draws its own layout. */
 @androidx.compose.runtime.Composable
-private fun Locked() = Empty("Locked — open Touch Weather Tracker to unlock", "today")
-
-@androidx.compose.runtime.Composable
-private fun Empty(msg: String, tab: String) {
-    Box(GlanceModifier.fillMaxSize().background(BG).padding(12.dp).clickable(open(tab)), contentAlignment = Alignment.Center) {
-        Text(msg, style = t(13, color = MUTED))
-    }
+private fun Guard(d: WData, needsPlace: Boolean = true, content: @androidx.compose.runtime.Composable () -> Unit) {
+    if (d.locked) LockedWidget() else if (needsPlace && d.place == null) NoPlaceWidget() else content()
 }
 
-/** Weather block shared by the Everyday and Saved Place widgets. */
-@androidx.compose.runtime.Composable
-private fun WeatherBlock(place: Place, w: WeatherData?, alerts: List<Alert>?, size: DpSize, showAlerts: Boolean, tab: String) {
-    val c = w?.conditions
-    val today = w?.daily?.firstOrNull()
-    val hi = w?.daily?.mapNotNull { it.highF }?.firstOrNull(); val lo = w?.daily?.mapNotNull { it.lowF }?.firstOrNull()
-    val now = System.currentTimeMillis()
-    val next = w?.hourly?.filter { it.timeMs >= now - 30 * 60_000L }?.take(if (size.width >= 250.dp) 5 else 3).orEmpty()
-    Column(GlanceModifier.fillMaxSize().background(BG).padding(12.dp).clickable(open(tab, place.id))) {
-        Text(place.name, style = t(12, true, MUTED), maxLines = 1)
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(Units.temp(c?.tempF ?: next.firstOrNull()?.tempF), style = t(34, true))
-            Spacer(GlanceModifier.width(8.dp))
-            Column {
-                Text(c?.summary ?: today?.summary ?: "—", style = t(13), maxLines = 2)
-                Text("H ${Units.temp(hi)}  L ${Units.temp(lo)}", style = t(12, color = MUTED))
-            }
-        }
-        if (showAlerts) {
-            val top = alerts?.minByOrNull { it.level.ordinal }
-            if (top != null) Text("⚠ ${top.event}${if ((alerts.size) > 1) " +${alerts.size - 1}" else ""}", style = t(12, true, ALERT), maxLines = 1)
-            else if (alerts != null) Text("No active alerts found", style = t(11, color = MUTED), maxLines = 1)
-        }
-        if (size.height >= 200.dp || (size.width >= 250.dp && size.height >= 110.dp && !showAlerts) ) {
-            Spacer(GlanceModifier.height(4.dp))
-            Row(GlanceModifier.fillMaxWidth()) {
-                next.forEach { h ->
-                    Column(GlanceModifier.defaultWeight(), horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(Units.clock(h.timeMs, place.timeZone).replace(":00", ""), style = t(10, color = MUTED))
-                        Text(Units.temp(h.tempF), style = t(13, true))
-                    }
+private fun wxDesc(d: WData) = "${d.place?.name ?: ""} ${d.temp?.roundToInt() ?: ""} degrees ${d.summary ?: ""}"
+
+// =============================================================== Everyday Weather family (follows the app's selected place)
+
+/** 1x1 – icon and temperature. */
+class TempSmallWidget : GlanceAppWidget() {
+    override val sizeMode = SizeMode.Exact
+    override suspend fun provideGlance(context: Context, id: GlanceId) {
+        val d = WidgetKit.load(context)
+        provideContent { Guard(d) {
+            WFrame(WidgetKit.background(d), WidgetKit.open("today", d.place?.id), pad = 6.dp) {
+                Column(GlanceModifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically, horizontalAlignment = Alignment.CenterHorizontally) {
+                    WIcon(WidgetKit.icon(d.summary, d.isDay), 30.dp, wxDesc(d))
+                    Text(Units.temp(d.temp), style = ts(20, true, center = true))
+                    Text(WidgetKit.updated(d.updatedMs, d.tz, short = true), style = ts(9, color = WHITE_DIM, center = true), maxLines = 1)
                 }
             }
-        }
-        Spacer(GlanceModifier.defaultWeight())
-        Text(stamp(w?.fetchedAtMs, place.timeZone) + if (c?.observedAtMs != null) " · obs ${Units.clock(c.observedAtMs, place.timeZone)}" else "", style = t(10, color = MUTED), maxLines = 1)
+        } }
     }
 }
 
-class EverydayWeatherWidget : GlanceAppWidget() {
-    override val sizeMode = SizeMode.Responsive(setOf(SMALL, WIDE, TALL))
+/** 3x1 – temperature, place and update time with icon. */
+class TempWideWidget : GlanceAppWidget() {
+    override val sizeMode = SizeMode.Exact
     override suspend fun provideGlance(context: Context, id: GlanceId) {
-        val r = repo(context)
-        val place = r.selected()
-        val w = place?.let { r.cachedWeather(it.id)?.value }
-        val isLocked = locked(context)
-        provideContent {
-            if (isLocked) Locked() else if (place == null) Empty("Open Touch Weather Tracker to add a place", "today") else WeatherBlock(place, w, null, LocalSize.current, false, "today")
-        }
+        val d = WidgetKit.load(context)
+        provideContent { Guard(d) {
+            WFrame(WidgetKit.background(d), WidgetKit.open("today", d.place?.id)) {
+                Row(GlanceModifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
+                    Column(GlanceModifier.defaultWeight()) {
+                        Text(Units.temp(d.temp), style = ts(30, true))
+                        Text(d.place?.name.orEmpty(), style = ts(12, true), maxLines = 1)
+                        Text("↻ " + WidgetKit.updated(d.updatedMs, d.tz), style = ts(10, color = WHITE_DIM), maxLines = 1)
+                    }
+                    WIcon(WidgetKit.icon(d.summary, d.isDay), 44.dp, wxDesc(d))
+                }
+            }
+        } }
     }
 }
 
+/** 2x3 – tall card. */
+class TempTallWidget : GlanceAppWidget() {
+    override val sizeMode = SizeMode.Exact
+    override suspend fun provideGlance(context: Context, id: GlanceId) {
+        val d = WidgetKit.load(context)
+        provideContent { Guard(d) {
+            WFrame(WidgetKit.background(d), WidgetKit.open("today", d.place?.id), pad = 12.dp) {
+                Column(GlanceModifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(Units.temp(d.temp), style = ts(46, true, center = true))
+                    Spacer(GlanceModifier.defaultWeight())
+                    WIcon(WidgetKit.icon(d.summary, d.isDay), 64.dp, wxDesc(d))
+                    Spacer(GlanceModifier.defaultWeight())
+                    Text(d.summary ?: "—", style = ts(13, center = true), maxLines = 2)
+                    Text(d.place?.name.orEmpty(), style = ts(14, true, center = true), maxLines = 1)
+                    d.weather?.daily?.let { groupDays(it).firstOrNull() }?.let { day -> Text("H ${Units.temp(day.high)}  L ${Units.temp(day.low)}", style = ts(12, color = WHITE_DIM, center = true)) }
+                    Text("↻ " + WidgetKit.updated(d.updatedMs, d.tz), style = ts(10, color = WHITE_DIM, center = true), maxLines = 1)
+                }
+            }
+        } }
+    }
+}
+
+/** 4x2 – next five hours with icons. */
+class HourlyWidget : GlanceAppWidget() {
+    override val sizeMode = SizeMode.Exact
+    override suspend fun provideGlance(context: Context, id: GlanceId) {
+        val d = WidgetKit.load(context)
+        provideContent { Guard(d) {
+            val now = System.currentTimeMillis()
+            val hours = d.weather?.hourly?.filter { it.timeMs >= now - 30 * 60_000L }?.take(5).orEmpty()
+            WFrame(WidgetKit.background(d), WidgetKit.open("today", d.place?.id)) {
+                Column(GlanceModifier.fillMaxSize()) {
+                    Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Column(GlanceModifier.defaultWeight()) {
+                            Text(d.place?.name.orEmpty(), style = ts(12, true), maxLines = 1)
+                            Row(verticalAlignment = Alignment.Bottom) { Text(Units.temp(d.temp), style = ts(28, true)); Spacer(GlanceModifier.width(6.dp)); Text(d.summary ?: "", style = ts(12), maxLines = 1) }
+                        }
+                        WIcon(WidgetKit.icon(d.summary, d.isDay), 36.dp, wxDesc(d))
+                    }
+                    Spacer(GlanceModifier.defaultWeight())
+                    Row(GlanceModifier.fillMaxWidth()) {
+                        hours.forEach { h ->
+                            Column(GlanceModifier.defaultWeight(), horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text(Units.clock(h.timeMs, d.tz).replace(":00", "").replace(" ", ""), style = ts(10, color = WHITE_DIM, center = true), maxLines = 1)
+                                WIcon(WidgetKit.icon(h.summary, h.isDay), 22.dp, h.summary)
+                                Text(Units.temp(h.tempF), style = ts(12, true, center = true))
+                            }
+                        }
+                    }
+                    Spacer(GlanceModifier.height(2.dp))
+                    Text(WidgetKit.updated(d.updatedMs, d.tz) + " · NWS forecast", style = ts(9, color = WHITE_DIM), maxLines = 1)
+                }
+            }
+        } }
+    }
+}
+
+/** 4x2 – today detail with hi/lo, feels-like, wind, precipitation and a few hours. */
+class TodayWidget : GlanceAppWidget() {
+    override val sizeMode = SizeMode.Exact
+    override suspend fun provideGlance(context: Context, id: GlanceId) {
+        val d = WidgetKit.load(context)
+        provideContent { Guard(d) {
+            val c = d.weather?.conditions
+            val day = d.weather?.daily?.let { groupDays(it).firstOrNull() }
+            val now = System.currentTimeMillis()
+            val hours = d.weather?.hourly?.filter { it.timeMs >= now - 30 * 60_000L }?.take(3).orEmpty()
+            WFrame(WidgetKit.background(d), WidgetKit.open("today", d.place?.id)) {
+                Column(GlanceModifier.fillMaxSize()) {
+                    Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Text(Units.temp(d.temp), style = ts(36, true))
+                        Spacer(GlanceModifier.width(8.dp))
+                        Column(GlanceModifier.defaultWeight()) {
+                            Text(d.summary ?: "—", style = ts(13, true), maxLines = 2)
+                            Text("${d.place?.name.orEmpty()}", style = ts(11, color = WHITE_DIM), maxLines = 1)
+                        }
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text("H ${Units.temp(day?.high)} / L ${Units.temp(day?.low)}", style = ts(12, true))
+                            Text("Feels ${Units.temp(c?.feelsLikeF ?: d.temp)}", style = ts(11, color = WHITE_DIM))
+                            Text(c?.windMph?.let { "Wind ${it.roundToInt()} mph" } ?: "", style = ts(11, color = WHITE_DIM), maxLines = 1)
+                        }
+                    }
+                    Spacer(GlanceModifier.defaultWeight())
+                    Row(GlanceModifier.fillMaxWidth()) {
+                        hours.forEach { h ->
+                            Row(GlanceModifier.defaultWeight(), verticalAlignment = Alignment.CenterVertically) {
+                                WIcon(WidgetKit.icon(h.summary, h.isDay), 20.dp, h.summary)
+                                Spacer(GlanceModifier.width(3.dp))
+                                Column { Text(Units.clock(h.timeMs, d.tz).replace(":00", "").replace(" ", ""), style = ts(9, color = WHITE_DIM)); Text(Units.temp(h.tempF), style = ts(12, true)) }
+                            }
+                        }
+                    }
+                    Spacer(GlanceModifier.height(2.dp))
+                    Text(WidgetKit.updated(d.updatedMs, d.tz) + (c?.observedAtMs?.let { " · observed ${Units.clock(it, d.tz)}" } ?: ""), style = ts(9, color = WHITE_DIM), maxLines = 1)
+                }
+            }
+        } }
+    }
+}
+
+/** 4x2 – five-day forecast. */
+class FiveDayWidget : GlanceAppWidget() {
+    override val sizeMode = SizeMode.Exact
+    override suspend fun provideGlance(context: Context, id: GlanceId) {
+        val d = WidgetKit.load(context)
+        provideContent { Guard(d) {
+            val days = d.weather?.daily?.let { groupDays(it) }?.take(5).orEmpty()
+            WFrame(WidgetKit.background(d), WidgetKit.open("today", d.place?.id)) {
+                Column(GlanceModifier.fillMaxSize()) {
+                    Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Text(d.place?.name.orEmpty(), style = ts(13, true), modifier = GlanceModifier.defaultWeight(), maxLines = 1)
+                        Text(Units.temp(d.temp), style = ts(18, true))
+                    }
+                    Spacer(GlanceModifier.defaultWeight())
+                    Row(GlanceModifier.fillMaxWidth()) {
+                        days.forEachIndexed { i, day ->
+                            Column(GlanceModifier.defaultWeight(), horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text(if (i == 0) "Today" else Units.dayName(day.startMs, d.tz), style = ts(10, color = WHITE_DIM, center = true), maxLines = 1)
+                                WIcon(WidgetKit.icon(day.summary, true), 26.dp, day.summary)
+                                Text(Units.temp(day.high), style = ts(13, true, center = true))
+                                Text(Units.temp(day.low), style = ts(11, color = WHITE_DIM, center = true))
+                            }
+                        }
+                    }
+                    Spacer(GlanceModifier.height(2.dp))
+                    Text(WidgetKit.updated(d.updatedMs, d.tz) + " · NWS forecast", style = ts(9, color = WHITE_DIM), maxLines = 1)
+                }
+            }
+        } }
+    }
+}
+
+// =============================================================== Saved Place family (place chosen per widget)
+
+@androidx.compose.runtime.Composable
+private fun AlertLine(d: WData, size: Int = 12) {
+    val a = d.topAlert
+    if (a != null) Row(verticalAlignment = Alignment.CenterVertically) {
+        WIcon(R.drawable.wx_alert, (size + 6).dp, "Alert")
+        Spacer(GlanceModifier.width(4.dp))
+        Text("${a.level.name.lowercase().replaceFirstChar { it.uppercase() }}: ${a.event}${if ((d.alerts?.size ?: 0) > 1) " +${d.alerts!!.size - 1}" else ""}", style = ts(size, true, WARN_TEXT.takeIf { d.warningActive } ?: WHITE), maxLines = 2)
+    } else if (d.alerts != null) Text("No active alerts found", style = ts(size - 1, color = WHITE_DIM), maxLines = 1)
+}
+
+/** 2x2 – a place you choose, with its top active alert. */
 class SavedPlaceWidget : GlanceAppWidget() {
-    override val sizeMode = SizeMode.Responsive(setOf(SMALL, WIDE, TALL))
+    override val sizeMode = SizeMode.Exact
     override suspend fun provideGlance(context: Context, id: GlanceId) {
-        val r = repo(context)
         val wid = GlanceAppWidgetManager(context).getAppWidgetId(id)
-        val place = r.prefs.widgetPlace(wid)?.let { pid -> r.places.value.firstOrNull { it.id == pid } }
-        val w = place?.let { r.cachedWeather(it.id)?.value }
-        val alerts = place?.let { r.store.read("alerts_${it.id}", AlertSet.serializer())?.alerts }
-        val isLocked = locked(context)
-        provideContent {
-            if (isLocked) Locked() else if (place == null) Empty("Tap to choose a saved place", "today") else WeatherBlock(place, w, alerts, LocalSize.current, true, "alerts")
-        }
-    }
-}
-
-class StormWatchWidget : GlanceAppWidget() {
-    override val sizeMode = SizeMode.Responsive(setOf(SMALL, WIDE, TALL))
-    override suspend fun provideGlance(context: Context, id: GlanceId) {
-        val r = repo(context)
-        val place = r.selected()
-        val cached = r.store.read("storms", Cached.serializer(kotlinx.serialization.builtins.ListSerializer(StormSnapshot.serializer())))
-        val storms = cached?.value?.map { it.toStorm() }.orEmpty()
-        val fetched = cached?.fetchedAtMs
-        val isLocked = locked(context)
-        provideContent {
-            if (isLocked) { Locked(); return@provideContent }
-            val size = LocalSize.current
-            Column(GlanceModifier.fillMaxSize().background(BG).padding(12.dp).clickable(open("storms"))) {
-                Text("Storm Watch", style = t(12, true, MUTED))
-                if (cached == null) {
-                    Text("No storm data yet", style = t(14, true))
-                    Text("Open the app to load NHC data.", style = t(11, color = MUTED))
-                } else if (storms.isEmpty()) {
-                    Text("No active tropical cyclones", style = t(15, true))
-                    Text("Per the National Hurricane Center. This does not mean other hazards are absent.", style = t(11, color = MUTED), maxLines = 3)
-                } else {
-                    val s = storms.maxByOrNull { it.intensityKt ?: 0 }!!
-                    Text("${s.classLabel} ${s.name}", style = t(16, true), maxLines = 2)
-                    val cat = ActiveStorm.saffir(s.intensityKt)
-                    Text(listOfNotNull(cat, s.intensityKt?.let { "${((it * 1.15078) / 5).roundToInt() * 5} mph" }).joinToString(" · "), style = t(13))
-                    if (place != null) {
-                        val d = Geo.distanceMiles(place.lat, place.lon, s.lat, s.lon).roundToInt()
-                        Text("$d mi ${Geo.compass(Geo.bearing(place.lat, place.lon, s.lat, s.lon))} of ${place.name}", style = t(12), maxLines = 1)
+        val d = WidgetKit.load(context, wid)
+        provideContent { Guard(d) {
+            WFrame(WidgetKit.background(d), WidgetKit.open("alerts", d.place?.id)) {
+                Column(GlanceModifier.fillMaxSize()) {
+                    Text(d.place?.name.orEmpty(), style = ts(12, true), maxLines = 1)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        WIcon(WidgetKit.icon(d.summary, d.isDay), 30.dp, wxDesc(d)); Spacer(GlanceModifier.width(6.dp)); Text(Units.temp(d.temp), style = ts(26, true))
                     }
-                    if (size.height >= 200.dp && storms.size > 1) Text("+${storms.size - 1} more active", style = t(11, color = MUTED))
-                    Text("Advisory ${s.advisoryNumber ?: "—"} · ${s.advisoryIssuedMs?.let { Units.dayClock(it, place?.timeZone) } ?: "time unknown"}", style = t(11, color = MUTED), maxLines = 1)
+                    Text(d.summary ?: "", style = ts(11, color = WHITE_DIM), maxLines = 1)
+                    Spacer(GlanceModifier.height(4.dp))
+                    AlertLine(d, 11)
+                    Spacer(GlanceModifier.defaultWeight())
+                    Text(WidgetKit.updated(d.updatedMs, d.tz), style = ts(9, color = WHITE_DIM), maxLines = 1)
                 }
-                Spacer(GlanceModifier.defaultWeight())
-                Text(stamp(fetched, place?.timeZone), style = t(10, color = MUTED))
             }
-        }
+        } }
     }
 }
 
-class EverydayWeatherReceiver : GlanceAppWidgetReceiver() {
-    override val glanceAppWidget: GlanceAppWidget = EverydayWeatherWidget()
-    override fun onUpdate(context: Context, appWidgetManager: android.appwidget.AppWidgetManager, appWidgetIds: IntArray) { super.onUpdate(context, appWidgetManager, appWidgetIds); com.mundymorning.touchweathertracker.work.Scheduler.refreshNow(context) }
+/** 4x1 – place, temperature and top alert in one row. */
+class SavedPlaceWideWidget : GlanceAppWidget() {
+    override val sizeMode = SizeMode.Exact
+    override suspend fun provideGlance(context: Context, id: GlanceId) {
+        val wid = GlanceAppWidgetManager(context).getAppWidgetId(id)
+        val d = WidgetKit.load(context, wid)
+        provideContent { Guard(d) {
+            WFrame(WidgetKit.background(d), WidgetKit.open("alerts", d.place?.id), pad = 8.dp) {
+                Row(GlanceModifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
+                    WIcon(WidgetKit.icon(d.summary, d.isDay), 34.dp, wxDesc(d))
+                    Spacer(GlanceModifier.width(8.dp))
+                    Column(GlanceModifier.defaultWeight()) {
+                        Row(verticalAlignment = Alignment.CenterVertically) { Text(Units.temp(d.temp), style = ts(22, true)); Spacer(GlanceModifier.width(8.dp)); Text(d.place?.name.orEmpty(), style = ts(12, true), maxLines = 1) }
+                        AlertLine(d, 11)
+                    }
+                    Text(WidgetKit.updated(d.updatedMs, d.tz, short = true), style = ts(9, color = WHITE_DIM), maxLines = 1)
+                }
+            }
+        } }
+    }
 }
-class SavedPlaceReceiver : GlanceAppWidgetReceiver() {
-    override val glanceAppWidget: GlanceAppWidget = SavedPlaceWidget()
-    override fun onUpdate(context: Context, appWidgetManager: android.appwidget.AppWidgetManager, appWidgetIds: IntArray) { super.onUpdate(context, appWidgetManager, appWidgetIds); com.mundymorning.touchweathertracker.work.Scheduler.refreshNow(context) }
+
+// =============================================================== Storm Watch
+
+/** Active hurricane status, distance/direction from the selected place, and the latest official advisory time. */
+class StormWatchWidget : GlanceAppWidget() {
+    override val sizeMode = SizeMode.Exact
+    override suspend fun provideGlance(context: Context, id: GlanceId) {
+        val d = WidgetKit.load(context)
+        provideContent { Guard(d, needsPlace = false) {
+            val big = LocalSize.current.height >= 100.dp
+            val storms = d.storms.orEmpty()
+            val s = storms.maxByOrNull { it.intensityKt ?: 0 }
+            WFrame(if (s != null) R.drawable.widget_bg_storm else R.drawable.widget_bg_neutral, WidgetKit.open("storms")) {
+                Column(GlanceModifier.fillMaxSize()) {
+                    Row(verticalAlignment = Alignment.CenterVertically) { WIcon(R.drawable.wx_cyclone, 18.dp, "Storm Watch"); Spacer(GlanceModifier.width(4.dp)); Text("Storm Watch", style = ts(11, true, WHITE_DIM)) }
+                    if (d.stormsFetchedMs == null) {
+                        Spacer(GlanceModifier.height(4.dp)); Text("No storm data yet", style = ts(14, true)); Text("Open the app to load NHC data.", style = ts(11, color = WHITE_DIM), maxLines = 2)
+                    } else if (s == null) {
+                        Spacer(GlanceModifier.height(4.dp)); Text("No active tropical cyclones", style = ts(15, true), maxLines = 2)
+                        if (big) Text("Per the National Hurricane Center. This does not mean other hazards are absent.", style = ts(11, color = WHITE_DIM), maxLines = 3)
+                    } else {
+                        Spacer(GlanceModifier.height(2.dp))
+                        Text("${s.classLabel} ${s.name}", style = ts(16, true), maxLines = 2)
+                        Text(listOfNotNull(ActiveStorm.saffir(s.intensityKt), s.intensityKt?.let { "${StormReportBuilder.ktToMph(it)} mph" }).joinToString(" · "), style = ts(13))
+                        d.place?.let { p -> Text("${Geo.distanceMiles(p.lat, p.lon, s.lat, s.lon).roundToInt()} mi ${Geo.compass(Geo.bearing(p.lat, p.lon, s.lat, s.lon))} of ${p.name}", style = ts(12), maxLines = 1) }
+                        if (big && storms.size > 1) Text("+${storms.size - 1} more active", style = ts(11, color = WHITE_DIM))
+                        Text("Advisory ${s.advisoryNumber ?: "—"} · ${s.advisoryIssuedMs?.let { Units.dayClock(it, d.tz) } ?: "time unknown"}", style = ts(10, color = WHITE_DIM), maxLines = 2)
+                    }
+                    Spacer(GlanceModifier.defaultWeight())
+                    Text(WidgetKit.updated(d.stormsFetchedMs, d.tz), style = ts(9, color = WHITE_DIM), maxLines = 1)
+                }
+            }
+        } }
+    }
 }
-class StormWatchReceiver : GlanceAppWidgetReceiver() {
-    override val glanceAppWidget: GlanceAppWidget = StormWatchWidget()
-    override fun onUpdate(context: Context, appWidgetManager: android.appwidget.AppWidgetManager, appWidgetIds: IntArray) { super.onUpdate(context, appWidgetManager, appWidgetIds); com.mundymorning.touchweathertracker.work.Scheduler.refreshNow(context) }
+
+// =============================================================== receivers
+
+abstract class TwWidgetReceiver : GlanceAppWidgetReceiver() {
+    override fun onUpdate(context: Context, appWidgetManager: android.appwidget.AppWidgetManager, appWidgetIds: IntArray) {
+        super.onUpdate(context, appWidgetManager, appWidgetIds)
+        com.mundymorning.touchweathertracker.work.Scheduler.refreshNow(context)
+    }
+}
+class TempSmallReceiver : TwWidgetReceiver() { override val glanceAppWidget: GlanceAppWidget = TempSmallWidget() }
+class TempWideReceiver : TwWidgetReceiver() { override val glanceAppWidget: GlanceAppWidget = TempWideWidget() }
+class TempTallReceiver : TwWidgetReceiver() { override val glanceAppWidget: GlanceAppWidget = TempTallWidget() }
+class HourlyReceiver : TwWidgetReceiver() { override val glanceAppWidget: GlanceAppWidget = HourlyWidget() }
+class TodayReceiver : TwWidgetReceiver() { override val glanceAppWidget: GlanceAppWidget = TodayWidget() }
+class FiveDayReceiver : TwWidgetReceiver() { override val glanceAppWidget: GlanceAppWidget = FiveDayWidget() }
+class SavedPlaceReceiver : TwWidgetReceiver() { override val glanceAppWidget: GlanceAppWidget = SavedPlaceWidget() }
+class SavedPlaceWideReceiver : TwWidgetReceiver() { override val glanceAppWidget: GlanceAppWidget = SavedPlaceWideWidget() }
+class StormWatchReceiver : TwWidgetReceiver() { override val glanceAppWidget: GlanceAppWidget = StormWatchWidget() }
+
+object AllWidgets {
+    suspend fun updateAll(ctx: Context) {
+        TempSmallWidget().updateAll(ctx); TempWideWidget().updateAll(ctx); TempTallWidget().updateAll(ctx)
+        HourlyWidget().updateAll(ctx); TodayWidget().updateAll(ctx); FiveDayWidget().updateAll(ctx)
+        SavedPlaceWidget().updateAll(ctx); SavedPlaceWideWidget().updateAll(ctx); StormWatchWidget().updateAll(ctx)
+    }
 }

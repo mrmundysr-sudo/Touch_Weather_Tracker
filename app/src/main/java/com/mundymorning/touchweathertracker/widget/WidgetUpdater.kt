@@ -18,8 +18,6 @@ object WidgetUpdater {
         }
         runCatching { repo.storms() }
         }
-        EverydayWeatherWidget().updateAll(ctx)
-        SavedPlaceWidget().updateAll(ctx)
-        StormWatchWidget().updateAll(ctx)
+        AllWidgets.updateAll(ctx)
     }
 }
