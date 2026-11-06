@@ -1,0 +1,90 @@
+# iOS build for claude/ios. Generates the Xcode project (XcodeGen), runs the shared-logic tests, and builds the app + widget extension
+# for the iOS Simulator and (unsigned) for device. Nothing is signed, published, or submitted anywhere.
+name: iOS build
+
+on:
+  push:
+    branches: ["claude/ios"]
+    paths: ["ios/**", ".github/workflows/ios-build.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: ios
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select newest Xcode 16
+        run: |
+          X=$(ls -d /Applications/Xcode_16*.app | sort -V | tail -1)
+          echo "Using $X"
+          sudo xcode-select -s "$X/Contents/Developer"
+          xcodebuild -version
+          swift --version
+
+      - name: TWCore tests (offline logic on macOS)
+        working-directory: ios/TWCore
+        run: swift test --filter "ParserTests|RepositoryTests" 2>&1 | tee ../../twcore-tests.log
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      - name: Build for iOS Simulator
+        run: |
+          set -o pipefail
+          xcodebuild -project TouchWeatherTracker.xcodeproj -scheme TouchWeatherTracker -configuration Debug \
+            -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build/sim CODE_SIGNING_ALLOWED=NO build 2>&1 | tee ../sim-build.log | tail -n 40
+
+      - name: Build for device (unsigned) and package IPA
+        run: |
+          set -o pipefail
+          xcodebuild -project TouchWeatherTracker.xcodeproj -scheme TouchWeatherTracker -configuration Debug \
+            -sdk iphoneos -destination 'generic/platform=iOS' \
+            -derivedDataPath build/dev CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" build 2>&1 | tee ../dev-build.log | tail -n 40
+          mkdir -p ../out/Payload
+          cp -R build/dev/Build/Products/Debug-iphoneos/TouchWeatherTracker.app ../out/Payload/
+          (cd ../out && zip -qry "Touch-Weather-Tracker-ios-unsigned-${{ github.run_number }}.ipa" Payload && rm -rf Payload)
+          (cd build/sim/Build/Products/Debug-iphonesimulator && zip -qry "../../../../../../out/Touch-Weather-Tracker-simulator-${{ github.run_number }}.app.zip" TouchWeatherTracker.app)
+          ls -la ../out
+
+      - name: Report compiler errors as annotations
+        if: failure()
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          for f in sim-build.log dev-build.log twcore-tests.log; do
+            [ -f "$f" ] || continue
+            grep -E "(error:|error :|Failed|fatal error)" "$f" | sed 's/^[ \t]*//' | sort -u | head -n 12 | while IFS= read -r l; do echo "::error title=$f::${l:0:600}"; done
+          done
+
+      - name: Upload build logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-build-logs-${{ github.run_number }}
+          path: |
+            sim-build.log
+            dev-build.log
+            twcore-tests.log
+          if-no-files-found: ignore
+
+      - name: Upload unsigned IPA and simulator app
+        uses: actions/upload-artifact@v4
+        with:
+          name: Touch-Weather-Tracker-ios-${{ github.run_number }}
+          path: out/*
+          if-no-files-found: error
