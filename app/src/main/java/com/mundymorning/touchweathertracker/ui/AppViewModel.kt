@@ -61,7 +61,8 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     // ------------------------------------------------------------------ Today
     fun refreshToday(force: Boolean = false) {
-        val place = selected.value ?: return
+        // Read synchronously from the repository: `selected` (a derived StateFlow) lags a moment behind a just-changed selection.
+        val place = repo.selected() ?: return
         todayJob?.cancel()
         todayJob = viewModelScope.launch {
             val cachedW = repo.cachedWeather(place.id)
@@ -80,15 +81,32 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         return runCatching { NwsSource.hazardousOutlook(office) }.getOrNull()
     }
 
-    /** Make [id] the Home place: Today switches to it, notifications for it are enabled, and widgets refresh to it right away. */
+    /**
+     * Make [id] the Home place. Everything that shows Home switches immediately: Today (selection + refresh) and the widgets,
+     * which are redrawn from cache at once and again after fresh data for the new Home arrives.
+     */
     fun makeHome(id: String) {
         repo.setHome(id)
         repo.select(id)
         resources.value = ResourcesState(); power.value = PowerState()
         refreshToday(force = true)
+        refreshHomeWidgets()
+    }
+
+    fun removePlace(id: String) {
+        val wasHome = repo.places.value.firstOrNull { it.id == id }?.isHome == true
+        repo.removePlace(id)
+        resources.value = ResourcesState(); power.value = PowerState()
+        refreshToday(force = true)
+        if (wasHome) refreshHomeWidgets()
+    }
+
+    private fun refreshHomeWidgets() {
+        val app = getApplication<Application>()
         viewModelScope.launch {
-            repo.places.value.firstOrNull { it.id == id }?.let { p -> runCatching { repo.weather(p, true); repo.alertsFor(p, true) } }
-            runCatching { com.mundymorning.touchweathertracker.widget.WidgetUpdater.updateAll(getApplication()) }
+            com.mundymorning.touchweathertracker.widget.WidgetUpdater.redraw(app)           // 1) instant, from cache
+            repo.home()?.let { h -> kotlinx.coroutines.withTimeoutOrNull(25_000) { runCatching { repo.weather(h, true) }; runCatching { repo.alertsFor(h, true) } } }
+            com.mundymorning.touchweathertracker.widget.WidgetUpdater.redraw(app)           // 2) with fresh data
         }
     }
 

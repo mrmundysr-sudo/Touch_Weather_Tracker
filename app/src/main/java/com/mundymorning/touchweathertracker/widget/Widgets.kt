@@ -21,7 +21,7 @@ private fun Guard(d: WData, needsPlace: Boolean = true, content: @androidx.compo
     if (d.locked) LockedWidget() else if (needsPlace && d.place == null) NoPlaceWidget() else content()
 }
 
-private fun wxDesc(d: WData) = "${d.place?.cityState ?: ""} ${d.temp?.roundToInt() ?: ""} degrees ${d.summary ?: ""}"
+private fun wxDesc(d: WData) = "${d.label} ${d.temp?.roundToInt() ?: ""} degrees ${d.summary ?: ""}"
 
 // =============================================================== Everyday Weather family (always shows Home)
 
@@ -52,7 +52,7 @@ class TempWideWidget : GlanceAppWidget() {
                 Row(GlanceModifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
                     Column(GlanceModifier.defaultWeight()) {
                         Text(Units.temp(d.temp), style = ts(30, true))
-                        Text(d.place?.cityState.orEmpty(), style = ts(12, true), maxLines = 1)
+                        Text(d.label, style = ts(12, true), maxLines = 1)
                         Text("↻ " + WidgetKit.updated(d.updatedMs, d.tz), style = ts(10, color = WHITE_DIM), maxLines = 1)
                     }
                     WIcon(WidgetKit.icon(d.summary, d.isDay), 44.dp, wxDesc(d))
@@ -75,7 +75,7 @@ class TempTallWidget : GlanceAppWidget() {
                     WIcon(WidgetKit.icon(d.summary, d.isDay), 64.dp, wxDesc(d))
                     Spacer(GlanceModifier.defaultWeight())
                     Text(d.summary ?: "—", style = ts(13, center = true), maxLines = 2)
-                    Text(d.place?.cityState.orEmpty(), style = ts(14, true, center = true), maxLines = 1)
+                    Text(d.label, style = ts(14, true, center = true), maxLines = 1)
                     d.weather?.daily?.let { groupDays(it).firstOrNull() }?.let { day -> Text("H ${Units.temp(day.high)}  L ${Units.temp(day.low)}", style = ts(12, color = WHITE_DIM, center = true)) }
                     Text("↻ " + WidgetKit.updated(d.updatedMs, d.tz), style = ts(10, color = WHITE_DIM, center = true), maxLines = 1)
                 }
@@ -96,7 +96,7 @@ class HourlyWidget : GlanceAppWidget() {
                 Column(GlanceModifier.fillMaxSize()) {
                     Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                         Column(GlanceModifier.defaultWeight()) {
-                            Text(d.place?.cityState.orEmpty(), style = ts(12, true), maxLines = 1)
+                            Text(d.label, style = ts(12, true), maxLines = 1)
                             Row(verticalAlignment = Alignment.Bottom) { Text(Units.temp(d.temp), style = ts(28, true)); Spacer(GlanceModifier.width(6.dp)); Text(d.summary ?: "", style = ts(12), maxLines = 1) }
                         }
                         WIcon(WidgetKit.icon(d.summary, d.isDay), 36.dp, wxDesc(d))
@@ -136,7 +136,7 @@ class TodayWidget : GlanceAppWidget() {
                         Spacer(GlanceModifier.width(8.dp))
                         Column(GlanceModifier.defaultWeight()) {
                             Text(d.summary ?: "—", style = ts(13, true), maxLines = 2)
-                            Text("${d.place?.cityState.orEmpty()}", style = ts(11, color = WHITE_DIM), maxLines = 1)
+                            Text("${d.label}", style = ts(11, color = WHITE_DIM), maxLines = 1)
                         }
                         Column(horizontalAlignment = Alignment.End) {
                             Text("H ${Units.temp(day?.high)} / L ${Units.temp(day?.low)}", style = ts(12, true))
@@ -172,7 +172,7 @@ class FiveDayWidget : GlanceAppWidget() {
             WFrame(WidgetKit.background(d), WidgetKit.open("today", d.place?.id), pad = 8.dp) {
                 Row(GlanceModifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
                     Column(GlanceModifier.width(66.dp)) {
-                        Text(d.place?.cityState.orEmpty(), style = ts(10, true), maxLines = 2)
+                        Text(d.label, style = ts(10, true), maxLines = 2)
                         Text(Units.temp(d.temp), style = ts(20, true))
                         Text(WidgetKit.updated(d.updatedMs, d.tz, short = true), style = ts(8, color = WHITE_DIM), maxLines = 1)
                     }
@@ -211,7 +211,7 @@ class SavedPlaceWidget : GlanceAppWidget() {
         provideContent { Guard(d) {
             WFrame(WidgetKit.background(d), WidgetKit.open("alerts", d.place?.id)) {
                 Column(GlanceModifier.fillMaxSize()) {
-                    Text(d.place?.cityState.orEmpty(), style = ts(12, true), maxLines = 1)
+                    Text(d.label, style = ts(12, true), maxLines = 1)
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         WIcon(WidgetKit.icon(d.summary, d.isDay), 30.dp, wxDesc(d)); Spacer(GlanceModifier.width(6.dp)); Text(Units.temp(d.temp), style = ts(26, true))
                     }
@@ -238,7 +238,7 @@ class SavedPlaceWideWidget : GlanceAppWidget() {
                     WIcon(WidgetKit.icon(d.summary, d.isDay), 34.dp, wxDesc(d))
                     Spacer(GlanceModifier.width(8.dp))
                     Column(GlanceModifier.defaultWeight()) {
-                        Row(verticalAlignment = Alignment.CenterVertically) { Text(Units.temp(d.temp), style = ts(22, true)); Spacer(GlanceModifier.width(8.dp)); Text(d.place?.cityState.orEmpty(), style = ts(12, true), maxLines = 1) }
+                        Row(verticalAlignment = Alignment.CenterVertically) { Text(Units.temp(d.temp), style = ts(22, true)); Spacer(GlanceModifier.width(8.dp)); Text(d.label, style = ts(12, true), maxLines = 1) }
                         AlertLine(d, 11)
                     }
                     Text(WidgetKit.updated(d.updatedMs, d.tz, short = true), style = ts(9, color = WHITE_DIM), maxLines = 1)
@@ -271,7 +271,7 @@ class StormWatchWidget : GlanceAppWidget() {
                         Spacer(GlanceModifier.height(2.dp))
                         Text("${s.classLabel} ${s.name}", style = ts(16, true), maxLines = 2)
                         Text(listOfNotNull(ActiveStorm.saffir(s.intensityKt), s.intensityKt?.let { "${StormReportBuilder.ktToMph(it)} mph" }).joinToString(" · "), style = ts(13))
-                        d.place?.let { p -> Text("${Geo.distanceMiles(p.lat, p.lon, s.lat, s.lon).roundToInt()} mi ${Geo.compass(Geo.bearing(p.lat, p.lon, s.lat, s.lon))} of ${p.cityState}", style = ts(12), maxLines = 1) }
+                        d.place?.let { p -> Text("${Geo.distanceMiles(p.lat, p.lon, s.lat, s.lon).roundToInt()} mi ${Geo.compass(Geo.bearing(p.lat, p.lon, s.lat, s.lon))} of ${d.label}", style = ts(12), maxLines = 1) }
                         if (big && storms.size > 1) Text("+${storms.size - 1} more active", style = ts(11, color = WHITE_DIM))
                         Text("Advisory ${s.advisoryNumber ?: "—"} · ${s.advisoryIssuedMs?.let { Units.dayClock(it, d.tz) } ?: "time unknown"}", style = ts(10, color = WHITE_DIM), maxLines = 2)
                     }
@@ -303,8 +303,9 @@ class StormWatchReceiver : TwWidgetReceiver() { override val glanceAppWidget: Gl
 
 object AllWidgets {
     suspend fun updateAll(ctx: Context) {
-        TempSmallWidget().updateAll(ctx); TempWideWidget().updateAll(ctx); TempTallWidget().updateAll(ctx)
-        HourlyWidget().updateAll(ctx); TodayWidget().updateAll(ctx); FiveDayWidget().updateAll(ctx)
-        SavedPlaceWidget().updateAll(ctx); SavedPlaceWideWidget().updateAll(ctx); StormWatchWidget().updateAll(ctx)
+        // Isolated: an exception while drawing one widget type must not stop the rest from updating.
+        runCatching { TempSmallWidget().updateAll(ctx) }; runCatching { TempWideWidget().updateAll(ctx) }; runCatching { TempTallWidget().updateAll(ctx) }
+        runCatching { HourlyWidget().updateAll(ctx) }; runCatching { TodayWidget().updateAll(ctx) }; runCatching { FiveDayWidget().updateAll(ctx) }
+        runCatching { SavedPlaceWidget().updateAll(ctx) }; runCatching { SavedPlaceWideWidget().updateAll(ctx) }; runCatching { StormWatchWidget().updateAll(ctx) }
     }
 }

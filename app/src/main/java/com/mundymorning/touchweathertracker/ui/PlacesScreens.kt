@@ -154,7 +154,7 @@ fun PlacesScreen(vm: AppViewModel, onBack: () -> Unit, onAdd: (Boolean) -> Unit,
     }
     remove?.let { p ->
         AlertDialog(onDismissRequest = { remove = null }, title = { Text("Remove ${p.name}?") }, text = { Text("Its saved forecast and notification settings will be deleted from this device.") },
-            confirmButton = { TextButton(onClick = { vm.repo.removePlace(p.id); remove = null }) { Text("Remove", color = MaterialTheme.colorScheme.error) } }, dismissButton = { TextButton(onClick = { remove = null }) { Text("Cancel") } })
+            confirmButton = { TextButton(onClick = { vm.removePlace(p.id); remove = null }) { Text("Remove", color = MaterialTheme.colorScheme.error) } }, dismissButton = { TextButton(onClick = { remove = null }) { Text("Cancel") } })
     }
 }
 

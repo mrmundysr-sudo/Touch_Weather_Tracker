@@ -31,6 +31,8 @@ data class WData(
     val alerts: List<Alert>?,
     val storms: List<ActiveStorm>?,
     val stormsFetchedMs: Long?,
+    /** "City, ST" — or the saved name (street address) when two saved places share a city, so a switch between them stays visible. */
+    val label: String = place?.cityState.orEmpty(),
 ) {
     val tz: String? get() = place?.timeZone
     val isDay: Boolean get() = weather?.hourly?.firstOrNull()?.isDay ?: true
@@ -52,7 +54,8 @@ object WidgetKit {
         val w = place?.let { r.cachedWeather(it.id)?.value }
         val alerts = place?.let { r.store.read("alerts_${it.id}", AlertSet.serializer())?.alerts }
         val st = r.store.read("storms", Cached.serializer(kotlinx.serialization.builtins.ListSerializer(StormSnapshot.serializer())))
-        return WData(locked, place, w, alerts, st?.value?.map { it.toStorm() }, st?.fetchedAtMs)
+        val label = place?.let { p -> if (r.places.value.any { it.id != p.id && it.cityState.equals(p.cityState, true) }) p.name else p.cityState }.orEmpty()
+        return WData(locked, place, w, alerts, st?.value?.map { it.toStorm() }, st?.fetchedAtMs, label)
     }
 
     fun icon(summary: String?, day: Boolean): Int {

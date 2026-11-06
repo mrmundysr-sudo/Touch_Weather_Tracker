@@ -5,3 +5,5 @@
 - ECMWF is not in NHC's public `aid_public` a-decks (only AVNO/GFS, CMC, UKX, NGX, HWRF, etc.).
 - The sandbox needs each data host allow-listed and Maven Central rate-limits parallel downloads (`--max-workers=2` and retries).
 - Widget preview layouts (`android:previewLayout`) are inflated as RemoteViews: a plain `<View>`/`Space` makes the launcher show "Problem loading widget". Use FrameLayout/LinearLayout/TextView/ImageView only (enforced by `WidgetPreviewLayoutTest`).
+- A derived `StateFlow` (`combine(...).stateIn`) lags a just-written source: read the repository synchronously when acting right after a state change (Home switch refreshed the old place).
+- Widget redraw must not wait on network: redraw from cache first, fetch with a time limit, redraw again; isolate each widget type so one failure cannot block the others.

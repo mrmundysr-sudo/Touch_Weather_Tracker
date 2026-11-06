@@ -37,6 +37,7 @@ android {
         buildConfig = true
     }
     lint { abortOnError = false }
+    testOptions { unitTests { isIncludeAndroidResources = true } }
     packaging { resources.excludes += "/META-INF/{AL2.0,LGPL2.1}" }
 }
 
@@ -64,5 +65,7 @@ dependencies {
     implementation("com.google.android.ump:user-messaging-platform:3.1.0")
 
     testImplementation("junit:junit:4.13.2")
+    testImplementation("org.robolectric:robolectric:4.13")
+    testImplementation("androidx.test:core:1.6.1")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0")
 }
