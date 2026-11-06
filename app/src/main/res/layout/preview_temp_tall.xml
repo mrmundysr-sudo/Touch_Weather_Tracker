@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="match_parent" android:background="@drawable/widget_bg_day" android:padding="12dp">
+<LinearLayout android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:gravity="center" >
+<TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="72°" android:textColor="#FFFFFFFF" android:textSize="46sp" android:maxLines="1" android:textStyle="bold"/>
+<ImageView android:layout_width="64dp" android:layout_height="64dp" android:src="@drawable/wx_partly_day" android:importantForAccessibility="no"/>
+<TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Partly Cloudy" android:textColor="#FFFFFFFF" android:textSize="13sp" android:maxLines="1"/>
+<TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Your place" android:textColor="#FFFFFFFF" android:textSize="14sp" android:maxLines="1" android:textStyle="bold"/>
+<TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="H 75°  L 58°" android:textColor="#CCFFFFFF" android:textSize="12sp" android:maxLines="1"/>
+</LinearLayout>
+</FrameLayout>

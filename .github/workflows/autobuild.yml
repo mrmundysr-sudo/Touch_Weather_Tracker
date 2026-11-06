@@ -1,0 +1,41 @@
+# Touch AutoBuild (dev branches) – self-contained for this repository.
+# The shared hub workflow (mrmundysr-sudo/touch-development android-build.yml) failed at startup with zero jobs for this
+# public repository (see docs/knowledge/KNOWN_ISSUES.md). This job performs the same steps locally:
+# build the debug APK, run the offline unit tests, upload the APK as a workflow artifact. Nothing is published or released.
+name: AutoBuild (dev branches)
+
+on:
+  push:
+    branches: ["claude/**"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: autobuild-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.9"
+      - name: Unit tests (parsers, report builder, widget previews, Home switching)
+        run: gradle --no-daemon :app:testDebugUnitTest --tests '*ReportAndParserTest*' --tests '*WidgetPreviewLayoutTest*' --tests '*HomeSwitchingTest*'
+      - name: Build debug APK
+        run: gradle --no-daemon :app:assembleDebug
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Touch-Weather-Tracker-debug-${{ github.run_number }}
+          path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
