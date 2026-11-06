@@ -60,6 +60,9 @@ public struct Place: Codable, Equatable, Identifiable, Sendable {
     /// Title for screens: a place saved from a ZIP search shows its city too ("Montpelier · ZIP 05602").
     public var displayTitle: String { if name.hasPrefix("ZIP "), let city { return "\(city) · \(name)" }; return name }
 
+    /// Name used inside sentences (storm report): a ZIP-saved place reads "Montpelier, VT (ZIP 05602)" instead of just "ZIP 05602".
+    public var reportName: String { if name.hasPrefix("ZIP "), city != nil { return "\(cityState) (\(name))" }; return name }
+
     /// "City, ST" for compact displays; falls back to the saved name until the city is known.
     public var cityState: String {
         if let city, let state { return "\(city), \(state)" }

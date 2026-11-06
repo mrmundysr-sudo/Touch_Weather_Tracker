@@ -69,7 +69,7 @@ public enum StormReportBuilder {
         let cat = ActiveStorm.saffir(s.intensityKt).map { " (\($0))" } ?? ""
         let move = (s.moveDirDeg != nil && s.moveSpeedMph != nil) ? ", moving \(Geo.compass(Double(s.moveDirDeg!))) at \(s.moveSpeedMph!) mph" : ""
         sections.append(ReportSection(title: "What is happening", question: "Where is the storm and how strong is it?", items: [
-            ReportItem("\(s.classLabel) \(s.name)\(cat) is centered about \(r(dist)) mi \(bearing) of \(i.place.name)\(windTxt)\(move)." + (s.pressureMb.map { " Minimum central pressure \($0) mb." } ?? ""),
+            ReportItem("\(s.classLabel) \(s.name)\(cat) is centered about \(r(dist)) mi \(bearing) of \(i.place.reportName)\(windTxt)\(move)." + (s.pressureMb.map { " Minimum central pressure \($0) mb." } ?? ""),
                        .observed, "NHC advisory", s.advisoryIssuedMs ?? s.lastUpdateMs, s.publicAdvisoryUrl)], emptyNote: nil))
 
         // 2. Forecast for this place
@@ -77,8 +77,8 @@ public enum StormReportBuilder {
         let inCone = i.coneRings.contains { Geo.inRing(i.place.lat, i.place.lon, $0) }
         if !i.coneRings.isEmpty {
             fc.append(ReportItem(inCone
-                ? "\(i.place.name) is inside the NHC forecast cone. The cone shows uncertainty in the storm's CENTER track — not the size of the storm or where wind, rain or surge will occur."
-                : "\(i.place.name) is outside the current NHC forecast cone. The cone shows uncertainty in the CENTER track only; impacts can extend well outside it.",
+                ? "\(i.place.reportName) is inside the NHC forecast cone. The cone shows uncertainty in the storm's CENTER track — not the size of the storm or where wind, rain or surge will occur."
+                : "\(i.place.reportName) is outside the current NHC forecast cone. The cone shows uncertainty in the CENTER track only; impacts can extend well outside it.",
                 .forecast, "NHC forecast cone", s.advisoryIssuedMs, s.graphicsUrl))
         }
         if let track = i.officialTrack {
@@ -89,8 +89,8 @@ public enum StormReportBuilder {
                 let tau = Double(track.points[idx].tauHours) + Double((next?.tauHours ?? track.points[idx].tauHours) - track.points[idx].tauHours) * (pos - Double(idx))
                 let whenMs = track.initMs + Int64(tau * 3_600_000)
                 fc.append(d <= 400
-                    ? ReportItem("NHC's official forecast track brings the storm's center to within about \(r(d)) mi of \(i.place.name) around \(Units.dayClock(whenMs, tz)). This is the closest approach of the forecast center, not an arrival time for any hazard.", .forecast, "NHC official forecast (ATCF OFCL)", track.initMs)
-                    : ReportItem("NHC's official forecast track stays more than \(r(d / 50) * 50) mi from \(i.place.name) through the \((track.points.last?.tauHours ?? 0) / 24)-day forecast.", .forecast, "NHC official forecast (ATCF OFCL)", track.initMs))
+                    ? ReportItem("NHC's official forecast track brings the storm's center to within about \(r(d)) mi of \(i.place.reportName) around \(Units.dayClock(whenMs, tz)). This is the closest approach of the forecast center, not an arrival time for any hazard.", .forecast, "NHC official forecast (ATCF OFCL)", track.initMs)
+                    : ReportItem("NHC's official forecast track stays more than \(r(d / 50) * 50) mi from \(i.place.reportName) through the \((track.points.last?.tauHours ?? 0) / 24)-day forecast.", .forecast, "NHC official forecast (ATCF OFCL)", track.initMs))
             }
         }
         if let w = i.weather {
@@ -104,7 +104,7 @@ public enum StormReportBuilder {
                 fc.append(ReportItem(t + ".", .forecast, "NWS \(w.gridId ?? "") gridded forecast", w.forecastUpdatedMs ?? w.fetchedAtMs))
             }
         }
-        sections.append(ReportSection(title: "Forecast for \(i.place.name)", question: "What is forecast here?", items: fc, emptyNote: "No forecast could be retrieved for this place right now."))
+        sections.append(ReportSection(title: "Forecast for \(i.place.reportName)", question: "What is forecast here?", items: fc, emptyNote: "No forecast could be retrieved for this place right now."))
 
         // 3. What nearby equipment measured
         var obs: [ReportItem] = []
@@ -115,7 +115,7 @@ public enum StormReportBuilder {
             if let p = b.pressureInHg { parts.append("pressure \(String(format: "%.2f", p)) inHg") }
             if let t = b.waterTempF { parts.append("water \(r(t))°F") }
             if parts.isEmpty { continue }
-            obs.append(ReportItem("NDBC buoy \(b.id), \(r(b.distanceMi)) mi \(Geo.compass(b.bearingDeg)) of \(i.place.name): \(parts.joined(separator: "; ")). One buoy does not represent the whole coast.", .observed, "NOAA NDBC buoy \(b.id)", b.timeMs))
+            obs.append(ReportItem("NDBC buoy \(b.id), \(r(b.distanceMi)) mi \(Geo.compass(b.bearingDeg)) of \(i.place.reportName): \(parts.joined(separator: "; ")). One buoy does not represent the whole coast.", .observed, "NOAA NDBC buoy \(b.id)", b.timeMs))
         }
         for g in i.waterLevels {
             let dep = g.departureFt.map { d in " — \(String(format: "%.1f", abs(d))) ft \(d >= 0 ? "above" : "below") the predicted tide" } ?? ""
@@ -138,7 +138,7 @@ public enum StormReportBuilder {
             }
         }
         sections.append(ReportSection(title: "What nearby equipment measured", question: "What has actually been observed?", items: obs,
-                                      emptyNote: "No fresh buoy, water-gauge or aircraft readings are available near \(i.place.name). Missing readings are not a sign of safety."))
+                                      emptyNote: "No fresh buoy, water-gauge or aircraft readings are available near \(i.place.reportName). Missing readings are not a sign of safety."))
 
         // 4. Warnings and actions
         var act: [ReportItem] = []
@@ -163,12 +163,12 @@ public enum StormReportBuilder {
         let threat = threatens(i)
         let has = { (e: String) in i.placeAlerts.contains { $0.event.localizedCaseInsensitiveContains(e) } }
         let headline: String
-        if has("Hurricane Warning") { headline = "Hurricane Warning in effect for \(i.place.name)" }
-        else if has("Tropical Storm Warning") { headline = "Tropical Storm Warning in effect for \(i.place.name)" }
-        else if has("Storm Surge") { headline = "Storm Surge alert for \(i.place.name)" }
-        else if threat { headline = "\(s.classLabel) \(s.name) — what it means for \(i.place.name)" }
-        else { headline = "\(s.classLabel) \(s.name) is not currently forecast to affect \(i.place.name)" }
-        return StormReportData(storm: s, placeName: i.place.name, headline: headline, sections: sections, details: details, threatens: threat, generatedMs: i.nowMs)
+        if has("Hurricane Warning") { headline = "Hurricane Warning in effect for \(i.place.reportName)" }
+        else if has("Tropical Storm Warning") { headline = "Tropical Storm Warning in effect for \(i.place.reportName)" }
+        else if has("Storm Surge") { headline = "Storm Surge alert for \(i.place.reportName)" }
+        else if threat { headline = "\(s.classLabel) \(s.name) — what it means for \(i.place.reportName)" }
+        else { headline = "\(s.classLabel) \(s.name) is not currently forecast to affect \(i.place.reportName)" }
+        return StormReportData(storm: s, placeName: i.place.reportName, headline: headline, sections: sections, details: details, threatens: threat, generatedMs: i.nowMs)
     }
 }
 

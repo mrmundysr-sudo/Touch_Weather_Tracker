@@ -10,7 +10,7 @@ struct TodayView: View {
         Group {
             if let p = model.selected { GeometryReader { geo in content(p, topInset: geo.safeAreaInsets.top).overlay(alignment: .top) {
                 // Once scrolled, a blurred scrim keeps content from running under the status bar.
-                Rectangle().fill(.ultraThinMaterial).frame(height: geo.safeAreaInsets.top).opacity(scrolled ? 1 : 0).ignoresSafeArea(edges: .top).allowsHitTesting(false) } } }
+                Rectangle().fill(.regularMaterial).frame(height: geo.safeAreaInsets.top).opacity(scrolled ? 1 : 0).allowsHitTesting(false) } } }
             else { EmptyState(icon: "mappin.circle", title: "Add a place", message: "Search by address, ZIP code or city to get your forecast.") }
         }
         .navigationBarHidden(true)
