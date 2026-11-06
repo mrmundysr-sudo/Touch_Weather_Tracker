@@ -10,7 +10,7 @@ Read these files before changing the app:
 The product brief and this repository are the source of truth. The owner has already approved the feature direction and asked Claude to use full judgment and autonomy to produce a polished, complete, working first pass. Do not stop for a feasibility proposal or routine approval. Resolve ordinary implementation details independently while preserving agreed scope.
 
 ## Platform sequence
-- This branch, `claude/android`, is the Android implementation branch. Build and finish Android first.
+- On `claude/android`, build and finish Android first. This `claude/ios` branch is for the iOS counterpart; follow [docs/IOS_HANDOFF.md](docs/IOS_HANDOFF.md) and start only after Android is complete and validated.
 - Keep platform-independent product behavior, models, service boundaries, and design decisions documented so they can be carried into iOS.
 - After the Android app is complete and its required builds and implementation checks pass, build the iOS app on `claude/ios`, based on the completed Android branch. Preserve equivalent features, content, and visual quality while following native iOS conventions.
 - Do not begin iOS as a separate product interpretation or reduce its feature set. If a platform restriction requires an adjustment, document the reason and the closest equivalent.
@@ -19,7 +19,7 @@ The product brief and this repository are the source of truth. The owner has alr
 ## Quality bar
 Deliver a complete, installable, professional app. Every represented feature must work end to end. Do not use demos, mock screens, sample-data modes, placeholder flows, fake functionality, or claim unfinished work as complete. Use the agreed real services and product design in the brief. Make errors, stale information, and uncertainty understandable to users.
 
-Follow Android platform conventions, accessible design, privacy expectations, resilience, and battery-conscious background behavior. Use autonomy for choices that improve usability, reliability, and polish without changing the agreed product.
+Follow the target platform's conventions, accessible design, privacy expectations, resilience, and battery-conscious background behavior. Use autonomy for choices that improve usability, reliability, and polish without changing the agreed product.
 
 ## Repository workflow
 - GitHub is the single source of truth. Work only on the relevant Claude branch.
@@ -27,7 +27,7 @@ Follow Android platform conventions, accessible design, privacy expectations, re
 - Make cohesive, reviewable commits and keep documentation current.
 - Use the shared Mundy App Template structure already present here. Read `docs/COMPONENT_REGISTRY.md` and consult Touch-Modules before substantial new functionality; inspect source and compatibility before reusing anything.
 - Read `docs/knowledge/README.md` and relevant knowledge files before coding. After substantial work, add an evidence-based report using `docs/knowledge/WORK_REPORT_TEMPLATE.md`. Never fabricate build or test results.
-- Build and validate the Android app through the established repository workflow when the implementation is ready. Configure deliverables in `.autobuild/deliver.conf`. Report the branch, commit, build evidence, and any remaining issue accurately.
+- Build and validate the app for the current branch's platform through the established workflow when implementation is ready. Configure Android deliverables in `.autobuild/deliver.conf`. Report the branch, commit, build evidence, and remaining issues accurately.
 - Do not expose private information or add credentials to source control.
 
 ## App-specific outcome
