@@ -7,3 +7,6 @@ All entries are results actually observed.
 - Not run: any emulator/device test, Compose UI tests, instrumented tests, TalkBack, large-font, lint (see KNOWN_ISSUES).
 - 2026-11-06 (Home-switching fix) local: new `HomeSwitchingTest` (Robolectric, 4 tests) passed – real Repository/AppViewModel/WidgetKit: making a place Home back and forth keeps exactly one Home, persists it, `repo.selected()` and widget data follow it; browsing another place does not move Home/widgets; removing Home promotes another; same-city places get distinct widget labels. `WidgetPreviewLayoutTest` passed (preview layouts only use RemoteViews-safe elements). **Not verified:** Glance redraw timing and the Today screen on a real device.
 - Sandbox note: Robolectric downloads its Android framework jar at test time; the sandbox proxy returned 429 until the jar was fetched manually into `~/.m2`. CI is unaffected.
+
+## iOS CI (claude/ios)
+- 2026-11-06 run 42308851015 (`7a44b0e`): macOS runner, Xcode 16 — TWCore tests, simulator build, unsigned device build/IPA, XCUITest onboarding + all tabs + widget gallery all passed. Earlier runs failed on real compile errors (dropped Route/MapFocus types, read-only widgetFamily environment) and were fixed. No device testing.

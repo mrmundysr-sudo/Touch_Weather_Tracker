@@ -18,3 +18,4 @@
 14. **Background work is opportunistic.** `BGAppRefreshTask` has no fixed cadence; notifications from background polling can be late or skipped. Critical Alerts need an Apple entitlement and are not used.
 15. **AdMob/UMP/StoreKit need owner configuration** (test ids in use; products not created); a privacy-policy URL is required for App Review.
 16. **Widgets:** iOS has no 1×1/3×1/4×1 sizes; closest equivalents are used (documented in FEATURE_CHECKLIST_IOS.md).
+17. **Today widget at night:** shows "H —" when NWS has no remaining daytime high; should fall back to the hourly maximum.
