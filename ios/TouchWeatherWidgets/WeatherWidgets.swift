@@ -154,9 +154,20 @@ struct TodayWidgetView: View {
                     }
                 }
                 Spacer(minLength: 0)
-                HStack { ForEach(hours, id: \.timeMs) { h in
-                    HStack(spacing: 4) { icon(Wx.symbol(h.summary, day: h.isDay), 18)
-                        VStack(alignment: .leading, spacing: 0) { Text(Units.clock(h.timeMs, e.tz).replacingOccurrences(of: ":00", with: "").replacingOccurrences(of: " ", with: "")).font(.system(size: 9)).opacity(0.8); Text(Units.temp(h.tempF)).font(.system(size: 13, weight: .semibold)) } }.frame(maxWidth: .infinity) } }
+                HStack(spacing: 0) { ForEach(hours, id: \.timeMs) { h in
+                    VStack(spacing: 1) {
+                        Text(Units.clock(h.timeMs, e.tz).replacingOccurrences(of: ":00", with: "").replacingOccurrences(of: " ", with: "")).font(.system(size: 10)).opacity(0.8).lineLimit(1)
+                        icon(Wx.symbol(h.summary, day: h.isDay), 20)
+                        Text(Units.temp(h.tempF)).font(.system(size: 13, weight: .semibold)).lineLimit(1)
+                    }.frame(maxWidth: .infinity) } }
+                if family == .systemLarge {
+                    Divider().overlay(.white.opacity(0.3))
+                    ForEach(Array(groupDays(e.weather?.daily ?? [], limit: 5).enumerated()), id: \.element.id) { i, d in
+                        HStack { Text(i == 0 ? "Today" : Units.dayName(d.startMs, e.tz)).font(.caption.weight(.semibold)).frame(width: 52, alignment: .leading); icon(Wx.symbol(d.summary), 18); Text(d.summary).font(.caption).lineLimit(1); Spacer()
+                            Text(Units.temp(d.high)).font(.caption.weight(.bold)); Text(Units.temp(d.low)).font(.caption).opacity(0.8) }
+                    }
+                    Spacer(minLength: 0)
+                }
                 Text(updatedText(e) + (c?.observedAtMs.map { " · observed \(Units.clock($0, e.tz))" } ?? "")).font(.system(size: 9)).opacity(0.8)
             }
         }.widgetURL(url("today", e))
@@ -192,10 +203,10 @@ struct FiveDayWidgetView: View {
             } else {
                 HStack(spacing: 6) {
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(e.label).font(.system(size: 11, weight: .bold)).lineLimit(2)
+                        Text(e.label).font(.system(size: 11, weight: .bold)).lineLimit(1).minimumScaleFactor(0.7)
                         Text(Units.temp(e.temp)).font(.system(size: 26, weight: .semibold))
                         Text(updatedText(e, short: true)).font(.system(size: 9)).opacity(0.8)
-                    }.frame(width: 74, alignment: .leading)
+                    }.frame(width: 80, alignment: .leading)
                     ForEach(Array(days.enumerated()), id: \.element.id) { i, d in
                         VStack(spacing: 2) {
                             Text(i == 0 ? "Today" : Units.dayName(d.startMs, e.tz)).font(.system(size: 10)).opacity(0.8)

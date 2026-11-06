@@ -23,7 +23,7 @@ struct StormWatchWidgetView: View {
                     Label("Storm Watch", systemImage: "hurricane").font(.caption.weight(.bold)).opacity(0.9)
                     if e.stormsFetchedMs == nil { Text("No storm data yet").font(.headline); Text("Open the app to load NHC data.").font(.caption).opacity(0.85) }
                     else if let s {
-                        Text("\(s.classLabel) \(s.name)").font(.headline).lineLimit(2)
+                        Text("\(s.classLabel) \(s.name)").font(.headline).lineLimit(2).minimumScaleFactor(0.8)
                         Text([ActiveStorm.saffir(s.intensityKt), s.intensityKt.map { "\(StormReportBuilder.ktToMph($0)) mph" }].compactMap { $0 }.joined(separator: " · ")).font(.subheadline)
                         if let p = e.place { Text("\(Int(Geo.distanceMiles(p.lat, p.lon, s.lat, s.lon).rounded())) mi \(Geo.compass(Geo.bearing(p.lat, p.lon, s.lat, s.lon))) of \(e.label)").font(.caption).lineLimit(2) }
                         if storms.count > 1 && family != .systemSmall { Text("+\(storms.count - 1) more active").font(.caption).opacity(0.85) }

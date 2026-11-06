@@ -215,7 +215,7 @@ struct ScrollOffsetKey: PreferenceKey { static var defaultValue: CGFloat = 0; st
 struct StatusBarScrim: View {
     let visible: Bool
     let height: CGFloat
-    var body: some View { Rectangle().fill(.regularMaterial).frame(height: height).opacity(visible ? 1 : 0).allowsHitTesting(false).animation(.easeInOut(duration: 0.15), value: visible) }
+    var body: some View { Rectangle().fill(.regularMaterial).frame(height: height).offset(y: -height).opacity(visible ? 1 : 0).allowsHitTesting(false).animation(.easeInOut(duration: 0.15), value: visible) }
 }
 
 /// iOS 18+: direct scroll-offset callback (the preference-based tracker above covers iOS 17).
