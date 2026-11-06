@@ -18,42 +18,47 @@ final class TouchWeatherUITests: XCTestCase {
         let a = XCTAttachment(screenshot: s); a.name = name; a.lifetime = .keepAlways; add(a)
     }
 
+    /// Waits for `el`; on failure saves a screenshot of what IS on screen (named `FAIL-<name>`) before failing the test.
+    private func require(_ el: XCUIElement, _ timeout: TimeInterval, _ name: String, _ message: String) {
+        if !el.waitForExistence(timeout: timeout) { shot("FAIL-\(name)"); XCTFail(message); fatalError("stopping: \(message)") }
+    }
+
     private func button(containing text: String) -> XCUIElement {
         app.buttons.containing(NSPredicate(format: "label CONTAINS[c] %@", text)).firstMatch
     }
 
     func testOnboardingThenEveryTab() throws {
         app.launch()
-        XCTAssertTrue(app.buttons["Get started"].waitForExistence(timeout: 30), "welcome screen did not appear")
+        require(app.buttons["Get started"], 30, "welcome", "welcome screen did not appear")
         shot("00-welcome")
         app.buttons["Get started"].tap()
 
         let field = app.textFields["searchField"]
-        XCTAssertTrue(field.waitForExistence(timeout: 15), "search field missing")
+        require(field, 15, "search-field", "search field missing")
         field.tap(); field.typeText("05602")
         let result = button(containing: "ZIP 05602")
-        XCTAssertTrue(result.waitForExistence(timeout: 40), "ZIP search returned no result (network?)")
+        require(result, 40, "zip-results", "ZIP search returned no result (network?)")
         shot("01-search-results")
         result.tap()
 
         let notNow = app.buttons["Not now"]
-        XCTAssertTrue(notNow.waitForExistence(timeout: 40), "notification step missing")
+        require(notNow, 40, "notification-step", "notification step missing")
         shot("02-notifications-step")
         notNow.tap()
         let show = app.buttons["Show my weather"]
-        XCTAssertTrue(show.waitForExistence(timeout: 15), "ready step missing")
+        require(show, 15, "ready-step", "ready step missing")
         shot("03-ready")
         show.tap()
 
         // Today: wait for real data
-        XCTAssertTrue(app.staticTexts["Next 24 hours"].waitForExistence(timeout: 90), "Today never showed the hourly forecast")
+        require(app.staticTexts["Next 24 hours"], 90, "today", "Today never showed the hourly forecast")
         shot("10-today")
         app.swipeUp(); shot("11-today-scrolled")
         app.swipeUp(); shot("12-today-bottom")
 
         for (name, file) in [("Map", "20-map"), ("Alerts", "30-alerts"), ("Storms", "40-storms"), ("Resources", "50-resources")] {
             let tab = app.tabBars.buttons[name]
-            XCTAssertTrue(tab.waitForExistence(timeout: 10), "tab \(name) missing")
+            require(tab, 10, "tab-\(name)", "tab \(name) missing")
             tab.tap()
             sleep(name == "Map" ? 14 : 12)
             shot(file)

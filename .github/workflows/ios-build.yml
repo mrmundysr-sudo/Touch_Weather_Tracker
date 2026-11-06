@@ -10,6 +10,7 @@ on:
 
 permissions:
   contents: read
+  checks: write   # to publish screenshot previews as a check run (readable without downloading artifacts)
 
 concurrency:
   group: ios-${{ github.ref }}
@@ -74,21 +75,33 @@ jobs:
             -destination "platform=iOS Simulator,id=$UDID" -derivedDataPath build/uitest -resultBundlePath ../uitest.xcresult \
             CODE_SIGNING_ALLOWED=NO 2>&1 | tee ../uitest.log | tail -n 60
 
-      - name: Publish screenshot previews as annotations (readable without artifact download)
+      - name: Publish screenshot previews as a check run (readable without artifact download)
         if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SHA: ${{ github.sha }}
+          REPO: ${{ github.repository }}
         run: |
           cd "$GITHUB_WORKSPACE"
           mkdir -p previews
-          ls shots 2>/dev/null | head -n 30
-          n=0
-          for f in $(ls shots/*.png 2>/dev/null | sort); do
-            n=$((n+1)); [ $n -gt 10 ] && break
+          for f in $(ls shots/*.png 2>/dev/null | sort | head -n 45); do
             b=$(basename "$f" .png)
-            sips -Z 560 --setProperty format jpeg --setProperty formatOptions 40 "$f" --out "previews/$b.jpg" >/dev/null 2>&1
+            sips -Z 640 --setProperty format jpeg --setProperty formatOptions 45 "$f" --out "previews/$b.jpg" >/dev/null 2>&1
             sz=$(stat -f%z "previews/$b.jpg")
-            if [ "$sz" -gt 42000 ]; then sips -Z 420 --setProperty format jpeg --setProperty formatOptions 30 "$f" --out "previews/$b.jpg" >/dev/null 2>&1; fi
-            echo "::notice title=shot-$b::$(base64 < previews/$b.jpg | tr -d '\n')"
+            if [ "$sz" -gt 44000 ]; then sips -Z 480 --setProperty format jpeg --setProperty formatOptions 35 "$f" --out "previews/$b.jpg" >/dev/null 2>&1; fi
           done
+          python3 - <<'PY'
+          import base64, glob, json, os, subprocess
+          anns = []
+          for f in sorted(glob.glob("previews/*.jpg")):
+              b64 = base64.b64encode(open(f, "rb").read()).decode()
+              anns.append({"path": "ios/README.md", "start_line": 1, "end_line": 1, "annotation_level": "notice", "title": "shot-" + os.path.basename(f)[:-4], "message": b64})
+          payload = {"name": "iOS screenshots", "head_sha": os.environ["SHA"], "status": "completed", "conclusion": "neutral",
+                     "output": {"title": "Simulator screenshots", "summary": f"{len(anns)} screenshots from the CI simulator UI test", "annotations": anns[:50]}}
+          open("payload.json", "w").write(json.dumps(payload))
+          print("screenshots:", len(anns))
+          PY
+          [ -s payload.json ] && gh api "repos/$REPO/check-runs" --method POST --input payload.json --jq '.id' || echo "no payload"
 
       - name: Report compiler errors as annotations
         if: always()
