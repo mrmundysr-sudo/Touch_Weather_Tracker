@@ -1,5 +1,7 @@
-# Touch AutoBuild caller (pinned to the reviewed hub commit used by sibling Touch apps; see autobuild/VERSIONING.md in touch-development).
-# Builds every claude/** branch push and manual dispatch. Debug APK only; nothing is published to a store.
+# Touch AutoBuild (dev branches) – self-contained for this repository.
+# The shared hub workflow (mrmundysr-sudo/touch-development android-build.yml) failed at startup with zero jobs for this
+# public repository (see docs/knowledge/KNOWN_ISSUES.md). This job performs the same steps locally:
+# build the debug APK, run the offline unit tests, upload the APK as a workflow artifact. Nothing is published or released.
 name: AutoBuild (dev branches)
 
 on:
@@ -8,7 +10,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write   # ceiling only; the shared workflow's build job is read-only
+  contents: read
 
 concurrency:
   group: autobuild-${{ github.ref }}
@@ -16,10 +18,24 @@ concurrency:
 
 jobs:
   build:
-    uses: mrmundysr-sudo/touch-development/.github/workflows/android-build.yml@97ce9ff9e6e178052c3ac64f8a7a3ed1fdb1bf5c # v1.0.1
-    with:
-      artifact_name: Touch-Weather-Tracker-debug-${{ github.run_number }}
-      java_version: "17"
-      project_dir: .
-      gradle_version: "8.9"
-      sdk_packages: "platforms;android-35 build-tools;35.0.0"
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.9"
+      - name: Unit tests (offline parsers and report builder)
+        run: gradle --no-daemon :app:testDebugUnitTest --tests '*ReportAndParserTest*'
+      - name: Build debug APK
+        run: gradle --no-daemon :app:assembleDebug
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Touch-Weather-Tracker-debug-${{ github.run_number }}
+          path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
