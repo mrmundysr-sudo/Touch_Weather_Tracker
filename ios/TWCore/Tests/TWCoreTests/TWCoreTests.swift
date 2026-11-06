@@ -129,3 +129,24 @@ final class ParserTests: XCTestCase {
         XCTAssertEqual(NwsSource.outlookSummary(t), "No hazardous weather is expected at this time.")
     }
 }
+
+final class PresentationTests: XCTestCase {
+    func testSymbols() {
+        XCTAssertEqual(Wx.symbol("Chance Rain"), "cloud.rain.fill"); XCTAssertEqual(Wx.symbol("Chance Rain And Snow"), "snowflake" /* snow wins over rain, same as Android */); XCTAssertEqual(Wx.symbol("Clear", day: false), "moon.stars.fill")
+        XCTAssertEqual(Wx.symbol("Mostly Cloudy"), "cloud.fill"); XCTAssertEqual(Wx.symbol("Partly Cloudy", day: false), "cloud.moon.fill"); XCTAssertEqual(Wx.symbol("Thunderstorms"), "cloud.bolt.rain.fill")
+    }
+    func testGroupDaysPairsDayAndNight() {
+        let d = [DailyPoint(name: "Today", startMs: 1, highF: 70, lowF: nil, summary: "Sunny", detail: "d1", precipChance: 10),
+                 DailyPoint(name: "Tonight", startMs: 2, highF: nil, lowF: 50, summary: "Clear", detail: "n1", precipChance: 40),
+                 DailyPoint(name: "Sat", startMs: 3, highF: 65, lowF: nil, summary: "Rain", detail: "d2")]
+        let g = groupDays(d)
+        XCTAssertEqual(g.count, 2); XCTAssertEqual(g[0].high, 70); XCTAssertEqual(g[0].low, 50); XCTAssertEqual(g[0].precip, 40); XCTAssertNil(g[1].low)
+    }
+    func testWidgetLabelDisambiguatesSameCity() {
+        var a = Place(name: "162 N Main St", lat: 1, lon: 1); a.city = "Montpelier"; a.state = "VT"
+        var b = Place(name: "500 Elm St", lat: 2, lon: 2); b.city = "Montpelier"; b.state = "VT"
+        var c = Place(name: "Houston", lat: 3, lon: 3); c.city = "Houston"; c.state = "TX"
+        XCTAssertEqual(widgetLabel(for: a, among: [a, b, c]), "162 N Main St"); XCTAssertEqual(widgetLabel(for: c, among: [a, b, c]), "Houston, TX")
+        XCTAssertEqual(widgetLabel(for: a, among: [a, c]), "Montpelier, VT")
+    }
+}

@@ -1,22 +1,6 @@
 import SwiftUI
 import TWCore
 
-struct DayRow: Identifiable { var id: Int64 { startMs }; var name: String; var startMs: Int64; var high: Double?; var low: Double?; var summary: String; var detail: String; var precip: Double?; var wind: String? }
-
-func groupDays(_ periods: [DailyPoint]) -> [DayRow] {
-    var out: [DayRow] = []; var i = 0
-    while i < periods.count {
-        let p = periods[i]
-        if p.highF != nil {
-            let night = i + 1 < periods.count && periods[i + 1].lowF != nil ? periods[i + 1] : nil
-            let pr: Double? = (p.precipChance ?? night?.precipChance) != nil ? max(p.precipChance ?? 0, night?.precipChance ?? 0) : nil
-            out.append(DayRow(name: p.name, startMs: p.startMs, high: p.highF, low: night?.lowF, summary: p.summary, detail: p.detail + (night.map { "\n\n\($0.name): \($0.detail)" } ?? ""), precip: pr, wind: p.windText))
-            i += night != nil ? 2 : 1
-        } else { out.append(DayRow(name: p.name, startMs: p.startMs, high: nil, low: p.lowF, summary: p.summary, detail: p.detail, precip: p.precipChance, wind: p.windText)); i += 1 }
-    }
-    return Array(out.prefix(8))
-}
-
 struct TodayView: View {
     @EnvironmentObject var model: AppModel
     @State private var expanded: Set<Int64> = []

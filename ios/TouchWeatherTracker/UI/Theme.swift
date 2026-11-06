@@ -35,14 +35,4 @@ enum Tw {
     static func icon(_ l: AlertLevel) -> String { switch l { case .warning: return "exclamationmark.triangle.fill"; case .watch: return "eye.fill"; case .advisory: return "info.circle.fill"; case .statement: return "doc.text.fill" } }
 }
 
-func weatherSymbol(_ summary: String?, day: Bool = true) -> String {
-    let s = (summary ?? "").lowercased()
-    if s.contains("thunder") { return "cloud.bolt.rain.fill" }
-    if ["snow", "flurr", "blizzard", "sleet", "ice"].contains(where: s.contains) { return "snowflake" }
-    if ["rain", "shower", "drizzle"].contains(where: s.contains) { return "cloud.rain.fill" }
-    if ["fog", "haze", "smoke", "mist"].contains(where: s.contains) { return "cloud.fog.fill" }
-    if s.contains("partly") || s.contains("mostly sunny") || s.contains("mostly clear") || s.contains("scattered") { return day ? "cloud.sun.fill" : "cloud.moon.fill" }
-    if s.contains("cloud") || s.contains("overcast") { return "cloud.fill" }
-    if s.contains("wind") || s.contains("breezy") { return "wind" }
-    return day ? "sun.max.fill" : "moon.stars.fill"
-}
+func weatherSymbol(_ summary: String?, day: Bool = true) -> String { Wx.symbol(summary, day: day) }
