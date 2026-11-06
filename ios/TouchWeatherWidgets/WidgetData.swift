@@ -4,6 +4,9 @@ import WidgetKit
 import AppIntents
 import TWCore
 
+/// SwiftUI also defines `Alert`; make the weather alert model win inside this module.
+typealias Alert = TWCore.Alert
+
 /// Everything a widget needs, read from the shared on-device store (widgets refresh stale data themselves within a short time limit).
 struct WxEntry: TimelineEntry {
     var date: Date

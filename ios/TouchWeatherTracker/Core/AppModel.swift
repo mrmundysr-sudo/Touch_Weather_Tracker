@@ -5,6 +5,9 @@ import TWCore
 import WidgetKit
 #endif
 
+/// SwiftUI also defines `Alert`; make the weather alert model win inside this module.
+typealias Alert = TWCore.Alert
+
 struct TodayState { var weather: Loaded<WeatherData>?; var alerts: Loaded<AlertSet>?; var outlook: Outlook?; var loading = false }
 struct FeedState { var scope: FeedScope = .home; var data: Loaded<[AlertTag]>?; var loading = false }
 struct SearchState { var query = ""; var results: [GeoResult] = []; var loading = false; var error: String?; var searched = false }

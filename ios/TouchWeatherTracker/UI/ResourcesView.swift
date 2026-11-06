@@ -171,7 +171,9 @@ struct PowerView: View {
     @EnvironmentObject var model: AppModel
     @State private var picking = false
     @State private var manual = false
-    @State private var name = "", phone = "", web = ""
+    @State private var name = ""
+    @State private var phone = ""
+    @State private var web = ""
 
     var body: some View {
         let st = model.power
