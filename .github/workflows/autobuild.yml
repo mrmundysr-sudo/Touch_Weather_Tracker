@@ -1,0 +1,25 @@
+# Touch AutoBuild caller (pinned to the reviewed hub commit used by sibling Touch apps; see autobuild/VERSIONING.md in touch-development).
+# Builds every claude/** branch push and manual dispatch. Debug APK only; nothing is published to a store.
+name: AutoBuild (dev branches)
+
+on:
+  push:
+    branches: ["claude/**"]
+  workflow_dispatch:
+
+permissions:
+  contents: write   # ceiling only; the shared workflow's build job is read-only
+
+concurrency:
+  group: autobuild-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    uses: mrmundysr-sudo/touch-development/.github/workflows/android-build.yml@97ce9ff9e6e178052c3ac64f8a7a3ed1fdb1bf5c # v1.0.1
+    with:
+      artifact_name: Touch-Weather-Tracker-debug-${{ github.run_number }}
+      java_version: "17"
+      project_dir: .
+      gradle_version: "8.9"
+      sdk_packages: "platforms;android-35 build-tools;35.0.0"
