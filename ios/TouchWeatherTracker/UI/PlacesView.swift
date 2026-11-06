@@ -115,7 +115,7 @@ struct SearchPlaceView: View {
         List {
             Section {
                 TextField("Address, ZIP code or city", text: Binding(get: { model.search.query }, set: { model.onSearchQuery($0) }))
-                    .textInputAutocapitalization(.words).autocorrectionDisabled().submitLabel(.search)
+                    .textInputAutocapitalization(.words).autocorrectionDisabled().submitLabel(.search).accessibilityIdentifier("searchField")
                 HStack {
                     Button { useMyLocation() } label: { Label("Use my location", systemImage: "location.fill") }.buttonStyle(.bordered).disabled(busy)
                     if !onboarding { Button { model.tab = .map; model.toast("Long-press the map to drop a pin."); model.path = [] } label: { Label("Drop a pin", systemImage: "mappin") }.buttonStyle(.bordered) }

@@ -54,6 +54,10 @@ final class AppModel: ObservableObject {
 
     init(repo: Repository = AppEnvironment.makeRepository()) {
         self.repo = repo
+        #if TWC_UITEST
+        // CI simulator UI test only (separate "UITest" build configuration): unlock so the test can reach the main tabs. Not compiled into installable builds.
+        repo.prefs.unlockUntilMs = Units.nowMs() + 6 * 3_600_000
+        #endif
         self.monetization = Monetization(prefs: repo.prefs)
         places = repo.places; favorites = repo.favorites; selectedId = repo.selectedId
         repo.onChange = { [weak self] in Task { @MainActor in self?.syncFromRepo() } }

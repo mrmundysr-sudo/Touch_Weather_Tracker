@@ -5,7 +5,16 @@ options:
     iOS: "17.0"
   createIntermediateGroups: true
   generateEmptyDirectories: true
+# "UITest" is a Debug-like configuration used ONLY by CI's simulator UI test: it defines TWC_UITEST, which pre-unlocks the app so the test can reach the
+# main tabs. It is never used for the builds the owner installs (those are plain Debug/Release).
+configs:
+  Debug: debug
+  Release: release
+  UITest: debug
 settings:
+  configs:
+    UITest:
+      SWIFT_ACTIVE_COMPILATION_CONDITIONS: "DEBUG TWC_UITEST"
   base:
     SWIFT_VERSION: "5.0"
     MARKETING_VERSION: "0.1.0"
@@ -84,6 +93,18 @@ targets:
       path: TouchWeatherWidgets/TouchWeatherWidgets.entitlements
       properties:
         com.apple.security.application-groups: [group.com.mundymorning.touchweathertracker]
+  TouchWeatherUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: TouchWeatherUITests
+    dependencies:
+      - target: TouchWeatherTracker
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.mundymorning.touchweathertracker.uitests
+        TEST_TARGET_NAME: TouchWeatherTracker
+        GENERATE_INFOPLIST_FILE: "YES"
 schemes:
   TouchWeatherTracker:
     build:
@@ -91,3 +112,7 @@ schemes:
         TouchWeatherTracker: all
     run:
       config: Debug
+    test:
+      config: UITest
+      targets:
+        - TouchWeatherUITests

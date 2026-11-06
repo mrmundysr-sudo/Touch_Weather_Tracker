@@ -62,16 +62,44 @@ jobs:
           (cd build/sim/Build/Products/Debug-iphonesimulator && zip -qry "../../../../../../out/Touch-Weather-Tracker-simulator-${{ github.run_number }}.app.zip" TouchWeatherTracker.app)
           ls -la ../out
 
-      - name: Report compiler errors as annotations
-        if: failure()
+      - name: UI test in the iOS Simulator (real onboarding, real network, screenshots)
+        id: uitest
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          UDID=$(xcrun simctl list devices available | grep -E "iPhone 1[5-9]( Pro)? \(" | head -1 | sed -E 's/.*\(([0-9A-F-]{36})\).*/\1/')
+          echo "Simulator: $UDID"; xcrun simctl boot "$UDID" || true
+          mkdir -p "$GITHUB_WORKSPACE/shots"
+          TEST_RUNNER_SCREENSHOT_DIR="$GITHUB_WORKSPACE/shots" xcodebuild test -project TouchWeatherTracker.xcodeproj -scheme TouchWeatherTracker \
+            -destination "platform=iOS Simulator,id=$UDID" -derivedDataPath build/uitest -resultBundlePath ../uitest.xcresult \
+            CODE_SIGNING_ALLOWED=NO 2>&1 | tee ../uitest.log | tail -n 60
+
+      - name: Publish screenshot previews as annotations (readable without artifact download)
+        if: always()
         run: |
           cd "$GITHUB_WORKSPACE"
-          for f in sim-build.log dev-build.log twcore-tests.log; do
-            [ -f "$f" ] || continue
-            grep -E "(error:|error :|Failed|fatal error)" "$f" | sed 's/^[ \t]*//' | sort -u | head -n 12 | while IFS= read -r l; do echo "::error title=$f::${l:0:600}"; done
+          mkdir -p previews
+          ls shots 2>/dev/null | head -n 30
+          n=0
+          for f in $(ls shots/*.png 2>/dev/null | sort); do
+            n=$((n+1)); [ $n -gt 10 ] && break
+            b=$(basename "$f" .png)
+            sips -Z 560 --setProperty format jpeg --setProperty formatOptions 40 "$f" --out "previews/$b.jpg" >/dev/null 2>&1
+            sz=$(stat -f%z "previews/$b.jpg")
+            if [ "$sz" -gt 42000 ]; then sips -Z 420 --setProperty format jpeg --setProperty formatOptions 30 "$f" --out "previews/$b.jpg" >/dev/null 2>&1; fi
+            echo "::notice title=shot-$b::$(base64 < previews/$b.jpg | tr -d '\n')"
           done
 
-      - name: Upload build logs
+      - name: Report compiler errors as annotations
+        if: always()
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          for f in sim-build.log dev-build.log twcore-tests.log uitest.log; do
+            [ -f "$f" ] || continue
+            grep -E "(error:|error :|Failed|fatal error|Test Case .* failed|XCTAssert|crashed)" "$f" | sed 's/^[ \t]*//' | sort -u | head -n 12 | while IFS= read -r l; do echo "::error title=$f::${l:0:600}"; done
+          done
+
+      - name: Upload build logs and UI test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -80,6 +108,8 @@ jobs:
             sim-build.log
             dev-build.log
             twcore-tests.log
+            uitest.log
+            shots/*.png
           if-no-files-found: ignore
 
       - name: Upload unsigned IPA and simulator app
@@ -88,3 +118,7 @@ jobs:
           name: Touch-Weather-Tracker-ios-${{ github.run_number }}
           path: out/*
           if-no-files-found: error
+
+      - name: Fail the job if the UI test failed
+        if: steps.uitest.outcome == 'failure'
+        run: echo "UI test failed — see uitest.log annotations" && exit 1
