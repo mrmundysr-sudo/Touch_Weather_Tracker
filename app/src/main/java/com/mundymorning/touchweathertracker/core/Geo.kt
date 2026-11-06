@@ -43,4 +43,33 @@ object Geo {
         val guam = lat in 13.0..14.0 && lon in 144.4..145.1
         return conus || alaska || hawaii || pr || guam
     }
+
+    /** Ray-casting point in ring test; ring points are [lon, lat]. */
+    fun inRing(lat: Double, lon: Double, ring: List<List<Double>>): Boolean {
+        var inside = false
+        var j = ring.size - 1
+        for (i in ring.indices) {
+            val xi = ring[i][0]; val yi = ring[i][1]; val xj = ring[j][0]; val yj = ring[j][1]
+            if ((yi > lat) != (yj > lat) && lon < (xj - xi) * (lat - yi) / (yj - yi + 1e-12) + xi) inside = !inside
+            j = i
+        }
+        return inside
+    }
+
+    /** Minimum distance (miles) from a point to a polyline of (lat,lon) vertices, sampling each segment; returns distance and fraction index along path. */
+    fun minDistanceToPath(lat: Double, lon: Double, path: List<Pair<Double, Double>>, steps: Int = 12): Pair<Double, Double>? {
+        if (path.isEmpty()) return null
+        var best = Double.MAX_VALUE; var bestPos = 0.0
+        if (path.size == 1) return distanceMiles(lat, lon, path[0].first, path[0].second) to 0.0
+        for (i in 0 until path.size - 1) {
+            for (k in 0..steps) {
+                val f = k / steps.toDouble()
+                val pl = path[i].first + (path[i + 1].first - path[i].first) * f
+                val po = path[i].second + (path[i + 1].second - path[i].second) * f
+                val d = distanceMiles(lat, lon, pl, po)
+                if (d < best) { best = d; bestPos = i + f }
+            }
+        }
+        return best to bestPos
+    }
 }

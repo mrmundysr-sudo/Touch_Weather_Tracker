@@ -1,3 +1,9 @@
 <resources>
     <string name="app_name">Touch Weather Tracker</string>
+    <string name="widget_everyday_name">Everyday Weather</string>
+    <string name="widget_everyday_desc">Current conditions, high/low and the next few hours. Updated periodically by Android, not instantly.</string>
+    <string name="widget_saved_name">Saved Place</string>
+    <string name="widget_saved_desc">Weather and active alerts for a place you choose. Updated periodically by Android, not instantly.</string>
+    <string name="widget_storm_name">Storm Watch</string>
+    <string name="widget_storm_desc">Active hurricane status, distance and the latest official advisory time. Updated periodically by Android, not instantly.</string>
 </resources>

@@ -46,6 +46,11 @@ object NdbcSource {
         return out
     }
 
+    suspend fun all(maxAgeMin: Int = 180): List<BuoyObs> {
+        val now = System.currentTimeMillis()
+        return parse(Http.text(S, LATEST)).filter { now - it.timeMs <= maxAgeMin * 60_000L && (it.windMph != null || it.waveHeightFt != null || it.pressureInHg != null) }
+    }
+
     /** Nearby buoys with a report no older than [maxAgeMin] and at least one meaningful reading. */
     suspend fun nearby(lat: Double, lon: Double, radiusMi: Double = 150.0, maxAgeMin: Int = 180, limit: Int = 4): List<BuoyObs> {
         val now = System.currentTimeMillis()

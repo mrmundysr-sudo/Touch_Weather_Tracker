@@ -186,6 +186,25 @@ object NwsSource {
         return null
     }
 
+    // ---------------- Hazardous Weather Outlook (official severe-weather outlook text) ----------------
+
+    data class Outlook(val office: String, val issuedMs: Long?, val text: String)
+
+    suspend fun hazardousOutlook(office: String): Outlook? {
+        val list = Http.jsonElement(S, "$BASE/products/types/HWO/locations/$office").obj()?.get("@graph") as? JsonArray ?: return null
+        val id = list.firstOrNull().obj()?.get("id").str() ?: return null
+        val p = Http.jsonElement(S, "$BASE/products/$id").obj() ?: return null
+        val text = p["productText"].str() ?: return null
+        return Outlook(office, Units.parseIso(p["issuanceTime"].str()), text)
+    }
+
+    /** First ".DAY ONE..." section (or the head of the product) as plain paragraphs. */
+    fun outlookSummary(text: String, maxChars: Int = 900): String {
+        val m = Regex("\\.DAY ONE[^\\n]*\\n(.*?)(?=\\n\\.[A-Z][A-Z ]+\\.\\.\\.|\\n\\$\\$|\\z)", RegexOption.DOT_MATCHES_ALL).find(text)
+        val body = (m?.groupValues?.get(1) ?: text.substringAfter("\n\n", text)).replace(Regex("\\n(?!\\n)"), " ").replace(Regex("\\s{2,}"), " ").trim()
+        return if (body.length > maxChars) body.take(maxChars).substringBeforeLast(' ') + "…" else body
+    }
+
     // ---------------- Alerts ----------------
 
     suspend fun alertsForPoint(lat: Double, lon: Double): List<Alert> =

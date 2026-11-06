@@ -133,6 +133,34 @@ object FemaSource {
     }
 }
 
+@Serializable
+data class BlueRoofMission(val disasterNumber: Int, val incident: String, val state: String, val agency: String, val receivedMs: Long?, val endMs: Long?, val summary: String)
+
+/**
+ * Operation Blue Roof status. The USACE website blocks automated access, so we use OpenFEMA mission assignments:
+ * a USACE (COE-*) mission assignment whose statement of work mentions temporary roofing and whose period of performance is current.
+ * This shows that a mission EXISTS for a state/disaster – county eligibility and sign-up are always confirmed with USACE.
+ */
+object BlueRoofSource {
+    private const val S = "OpenFEMA"
+    suspend fun activeMissions(state: String?): List<BlueRoofMission> {
+        val since = java.time.LocalDate.now().minusDays(180)
+        val filter = "startswith(agencyId,'COE') and dateReceived ge '${since}T00:00:00.000z'" + (state?.let { " and stt eq '$it'" } ?: "")
+        val url = "https://www.fema.gov/api/open/v2/MissionAssignments?\$filter=${URLEncoder.encode(filter, "UTF-8").replace("+", "%20")}&\$orderby=dateReceived%20desc&\$top=400"
+        val arr = Http.jsonElement(S, url).o()?.get("MissionAssignments") as? JsonArray ?: return emptyList()
+        val now = System.currentTimeMillis()
+        return arr.mapNotNull { e ->
+            val o = e.o() ?: return@mapNotNull null
+            val text = (o["statementOfWork"].s().orEmpty() + " " + o["assistanceRequested"].s().orEmpty())
+            if (!Regex("roof", RegexOption.IGNORE_CASE).containsMatchIn(text)) return@mapNotNull null
+            val end = Units.parseIso(o["maPopEndDate"].s() ?: o["popEndDate"].s())
+            if (end != null && end < now - 14L * 86_400_000L) return@mapNotNull null
+            BlueRoofMission(o["disasterNumber"].d()?.toInt() ?: return@mapNotNull null, o["incidentName"].s().orEmpty(), o["stt"].s().orEmpty(), o["agency"].s().orEmpty(),
+                Units.parseIso(o["dateReceived"].s()), end, o["statementOfWork"].s().orEmpty().take(260))
+        }.distinctBy { it.disasterNumber to it.state }
+    }
+}
+
 /** Likely local electric utility from public electric retail service-territory polygons (HIFLD data; public domain). */
 object UtilitySource {
     private const val S = "Utility territories"

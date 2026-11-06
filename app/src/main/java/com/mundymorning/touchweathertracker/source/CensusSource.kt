@@ -127,6 +127,17 @@ object CensusSource {
         return (pt.city ?: "Dropped pin") to pt.state
     }
 
+    /** U.S. states (USPS abbreviations) that a polyline of (lat,lon) vertices crosses or touches – used for the NHC landfall test. */
+    suspend fun statesCrossed(path: List<Pair<Double, Double>>): List<String> {
+        if (path.size < 2) return emptyList()
+        val id = layer("States")
+        val paths = path.joinToString(",", "[[", "]]") { "[${it.second},${it.first}]" }
+        val geom = "{\"paths\":$paths,\"spatialReference\":{\"wkid\":4326}}"
+        val url = "$TIGER/$id/query?geometry=${URLEncoder.encode(geom, "UTF-8")}&geometryType=esriGeometryPolyline&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=STUSAB,STATE&returnGeometry=false&f=json"
+        val feats = Http.jsonElement(S, url).obj()?.get("features") as? JsonArray ?: return emptyList()
+        return feats.mapNotNull { it.obj()?.get("attributes").obj()?.get("STUSAB").str() }
+    }
+
     /** Find counties in a state for the "favorite county" picker. */
     suspend fun counties(stateAbbr: String): List<Pair<String, String>> {
         val id = layer("Counties")

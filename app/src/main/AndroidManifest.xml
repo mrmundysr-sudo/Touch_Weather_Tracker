@@ -20,6 +20,25 @@
             android:name="com.google.android.gms.ads.APPLICATION_ID"
             android:value="${admobAppId}" />
 
+        <receiver android:name=".work.EventActionReceiver" android:exported="false" />
+
+        <activity android:name=".widget.WidgetConfigActivity" android:exported="false" android:theme="@style/Theme.TouchWeather">
+            <intent-filter><action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" /></intent-filter>
+        </activity>
+
+        <receiver android:name=".widget.EverydayWeatherReceiver" android:label="@string/widget_everyday_name" android:exported="true">
+            <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_everyday_info" />
+        </receiver>
+        <receiver android:name=".widget.SavedPlaceReceiver" android:label="@string/widget_saved_name" android:exported="true">
+            <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_saved_info" />
+        </receiver>
+        <receiver android:name=".widget.StormWatchReceiver" android:label="@string/widget_storm_name" android:exported="true">
+            <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_storm_info" />
+        </receiver>
+
         <activity
             android:name=".MainActivity"
             android:exported="true"

@@ -82,4 +82,11 @@ class LiveSourceTest {
         val r = ReconSource.summary("al092026", 29.8, -86.8, hours = 24 * 400, radiusKm = 5000.0)
         println("recon=$r")
     }
+
+    @Test fun statesCrossedOverGulf() = runBlocking {
+        val over = CensusSource.statesCrossed(listOf(25.0 to -90.0, 27.0 to -90.0))
+        val landfall = CensusSource.statesCrossed(listOf(27.0 to -90.0, 31.0 to -91.0))
+        println("gulf-only=$over landfall=$landfall")
+        assert(over.isEmpty()); assert("LA" in landfall)
+    }
 }
