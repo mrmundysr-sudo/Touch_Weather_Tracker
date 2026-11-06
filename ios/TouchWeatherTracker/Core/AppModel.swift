@@ -249,3 +249,10 @@ enum EventAction { case enable, decline, end, keep }
 /// One-shot request from outside the UI (notification / widget taps).
 struct LaunchRequest: Equatable { var tab: AppTab?; var alertId: String?; var placeId: String?; var stormId: String?; var nonce = UUID() }
 enum AppTab: String, CaseIterable, Identifiable { case today, map, alerts, storms, resources; var id: String { rawValue } }
+
+struct MapFocus: Equatable { var lat: Double; var lon: Double; var spanDegrees: Double = 6; var nonce = UUID() }
+
+/// Pushed destinations (value-based navigation).
+enum Route: Hashable {
+    case alert(String), places, search(home: Bool), favorites, settings, unlockStatus, sources, power, storm(String)
+}
