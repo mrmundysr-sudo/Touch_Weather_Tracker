@@ -16,3 +16,10 @@ func withTimeout(_ seconds: Double, _ body: @escaping @Sendable () async -> Void
         _ = await g.next(); g.cancelAll()
     }
 }
+
+import WidgetKit
+private struct FamilyOverrideKey: EnvironmentKey { static let defaultValue: WidgetFamily? = nil }
+extension EnvironmentValues {
+    /// Lets the CI widget gallery render a widget view at a chosen family (`widgetFamily` itself is read-only). nil in real widgets.
+    var twFamilyOverride: WidgetFamily? { get { self[FamilyOverrideKey.self] } set { self[FamilyOverrideKey.self] = newValue } }
+}

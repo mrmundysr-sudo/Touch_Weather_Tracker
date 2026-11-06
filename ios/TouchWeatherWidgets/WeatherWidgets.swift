@@ -58,7 +58,9 @@ private func icon(_ name: String, _ size: CGFloat) -> some View { Image(systemNa
 // MARK: Temp (small + lock screen)
 
 struct TempWidgetView: View {
-    @Environment(\.widgetFamily) var family
+    @Environment(\.widgetFamily) var systemFamily
+    @Environment(\.twFamilyOverride) var familyOverride
+    var family: WidgetFamily { familyOverride ?? systemFamily }
     let e: WxEntry
     var body: some View {
         Guarded(e: e) {
@@ -130,7 +132,9 @@ struct HourlyWidget: Widget {
 // MARK: Today (medium + large)
 
 struct TodayWidgetView: View {
-    @Environment(\.widgetFamily) var family
+    @Environment(\.widgetFamily) var systemFamily
+    @Environment(\.twFamilyOverride) var familyOverride
+    var family: WidgetFamily { familyOverride ?? systemFamily }
     let e: WxEntry
     var body: some View {
         Guarded(e: e) {
@@ -168,7 +172,9 @@ struct TodayWidget: Widget {
 // MARK: 5-Day (medium compact strip; large vertical list)
 
 struct FiveDayWidgetView: View {
-    @Environment(\.widgetFamily) var family
+    @Environment(\.widgetFamily) var systemFamily
+    @Environment(\.twFamilyOverride) var familyOverride
+    var family: WidgetFamily { familyOverride ?? systemFamily }
     let e: WxEntry
     var body: some View {
         Guarded(e: e) {
@@ -212,7 +218,9 @@ struct FiveDayWidget: Widget {
 // MARK: Saved Place (configurable)
 
 struct SavedPlaceWidgetView: View {
-    @Environment(\.widgetFamily) var family
+    @Environment(\.widgetFamily) var systemFamily
+    @Environment(\.twFamilyOverride) var familyOverride
+    var family: WidgetFamily { familyOverride ?? systemFamily }
     let e: WxEntry
     var body: some View {
         Guarded(e: e) {

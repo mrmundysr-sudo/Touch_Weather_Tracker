@@ -3,7 +3,9 @@ import WidgetKit
 import TWCore
 
 struct StormWatchWidgetView: View {
-    @Environment(\.widgetFamily) var family
+    @Environment(\.widgetFamily) var systemFamily
+    @Environment(\.twFamilyOverride) var familyOverride
+    var family: WidgetFamily { familyOverride ?? systemFamily }
     let e: WxEntry
     var body: some View {
         let storms = e.storms ?? []

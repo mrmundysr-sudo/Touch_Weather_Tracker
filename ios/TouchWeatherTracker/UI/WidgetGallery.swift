@@ -32,7 +32,7 @@ struct WidgetGalleryView: View {
     private func item<V: View>(_ title: String, _ family: WidgetFamily, _ w: CGFloat, _ h: CGFloat, @ViewBuilder _ v: () -> V) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(title).font(.caption).foregroundStyle(.secondary)
-            v().environment(\.widgetFamily, family).padding(14).frame(width: w, height: h)
+            v().environment(\.twFamilyOverride, family).padding(14).frame(width: w, height: h)
                 .background(LinearGradient(colors: entry?.background ?? [.blue, .black], startPoint: .top, endPoint: .bottom))
                 .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
         }
