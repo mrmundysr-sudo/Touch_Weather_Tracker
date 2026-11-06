@@ -21,7 +21,7 @@ import com.mundymorning.touchweathertracker.data.UtilityChoice
 import com.mundymorning.touchweathertracker.source.*
 import kotlin.math.roundToInt
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun ResourcesScreen(vm: AppViewModel, onOpenPower: () -> Unit) {
     val place by vm.selected.collectAsState()
@@ -59,7 +59,7 @@ fun ResourcesScreen(vm: AppViewModel, onOpenPower: () -> Unit) {
                 TwCard {
                     Text("How to apply", style = MaterialTheme.typography.titleSmall)
                     Text("Individuals and households can apply for FEMA assistance when their county is designated for Individual Assistance: online at DisasterAssistance.gov, by phone at 1-800-621-3362, or at a Disaster Recovery Center. Eligibility, programs and deadlines depend on the declaration and your circumstances — FEMA makes the determination.", style = MaterialTheme.typography.bodyMedium)
-                    Row(Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) { LinkButton("DisasterAssistance.gov", "https://www.disasterassistance.gov"); OutlinedButton(onClick = { ctx.dial("18006213362") }, modifier = Modifier.heightIn(min = 48.dp)) { Icon(Icons.Outlined.Call, null, Modifier.size(18.dp)); Spacer(Modifier.width(6.dp)); Text("Call FEMA") } }
+                    FlowRow(Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) { LinkButton("DisasterAssistance.gov", "https://www.disasterassistance.gov"); OutlinedButton(onClick = { ctx.dial("18006213362") }, modifier = Modifier.heightIn(min = 48.dp)) { Icon(Icons.Outlined.Call, null, Modifier.size(18.dp)); Spacer(Modifier.width(6.dp)); Text("Call FEMA") } }
                 }
                 b?.let { SourceLine("OpenFEMA declarations", it.fetchedAtMs, p.timeZone) }
             }
@@ -115,9 +115,9 @@ fun ResourcesScreen(vm: AppViewModel, onOpenPower: () -> Unit) {
                         ms.take(3).forEach { m -> Text("DR-${m.disasterNumber} ${m.incident}${m.endMs?.let { " · period through ${Units.stamp(it).substringBefore(',')}" } ?: ""}", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 4.dp)) }
                         Text("This shows a mission assignment exists — not that your county or home is eligible. Confirm eligibility and sign up with USACE; apply for FEMA assistance too.", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 6.dp))
                     }
-                    Row(Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FlowRow(Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         LinkButton("USACE Blue Roof", "https://www.usace.army.mil/Missions/Emergency-Operations/Blue-Roof/")
-                        OutlinedButton(onClick = { ctx.dial("18886978322") }, modifier = Modifier.heightIn(min = 48.dp)) { Icon(Icons.Outlined.Call, null, Modifier.size(18.dp)); Spacer(Modifier.width(6.dp)); Text("1-888-ROOF-BLU") }
+                        OutlinedButton(onClick = { ctx.dial("18886978322") }, modifier = Modifier.heightIn(min = 48.dp)) { Icon(Icons.Outlined.Call, null, Modifier.size(18.dp)); Spacer(Modifier.width(6.dp)); Text("Call 1-888-ROOF-BLU", maxLines = 1) }
                     }
                     Text("Source: OpenFEMA mission assignments (USACE). The USACE site is the authority on eligibility and the sign-up process.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 6.dp))
                 }
@@ -136,6 +136,7 @@ private fun PetLegend() {
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun ShelterCard(s: Shelter) {
     val ctx = LocalContext.current
@@ -152,7 +153,7 @@ private fun ShelterCard(s: Shelter) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) { PetBadge(s.pet); Text(when (s.pet) { PetStatus.ALLOWED -> "Pets OK"; PetStatus.NOT_ALLOWED -> "No pets"; else -> "Pets: not reported" }, style = MaterialTheme.typography.labelSmall) }
         }
         Text("Availability can change quickly — call to confirm before traveling. Shelter hours and capacity are as last reported to FEMA.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 4.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 6.dp)) {
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 6.dp)) {
             OutlinedButton(onClick = { ctx.navigateTo(s.lat, s.lon, s.name) }, modifier = Modifier.heightIn(min = 48.dp)) { Icon(Icons.Outlined.Directions, null, Modifier.size(18.dp)); Spacer(Modifier.width(6.dp)); Text("Directions") }
             if (s.phone != null) OutlinedButton(onClick = { ctx.dial(s.phone) }, modifier = Modifier.heightIn(min = 48.dp)) { Icon(Icons.Outlined.Call, null, Modifier.size(18.dp)); Spacer(Modifier.width(6.dp)); Text("Call") }
             else Text("No phone listed — call 211", style = MaterialTheme.typography.bodySmall, modifier = Modifier.align(Alignment.CenterVertically))
@@ -160,6 +161,7 @@ private fun ShelterCard(s: Shelter) {
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun CenterCard(c: RecoveryCenter) {
     val ctx = LocalContext.current
@@ -169,7 +171,7 @@ private fun CenterCard(c: RecoveryCenter) {
         Text("${"%.1f".format(c.distanceMi)} mi · Reported status: ${c.status}${c.disasterNumber?.let { " · DR-$it" } ?: ""}", style = MaterialTheme.typography.bodySmall)
         c.hours?.let { Text("Hours: $it", style = MaterialTheme.typography.bodySmall) }
         c.updatedMs?.let { Text("Last reported ${Units.ago(it)}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 6.dp)) {
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 6.dp)) {
             OutlinedButton(onClick = { ctx.navigateTo(c.lat, c.lon, c.name) }, modifier = Modifier.heightIn(min = 48.dp)) { Icon(Icons.Outlined.Directions, null, Modifier.size(18.dp)); Spacer(Modifier.width(6.dp)); Text("Directions") }
             OutlinedButton(onClick = { ctx.dial("18006213362") }, modifier = Modifier.heightIn(min = 48.dp)) { Icon(Icons.Outlined.Call, null, Modifier.size(18.dp)); Spacer(Modifier.width(6.dp)); Text("Call FEMA to confirm") }
         }
@@ -188,7 +190,7 @@ private fun DeclarationCard(d: Declaration, p: Place) {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun PowerScreen(vm: AppViewModel, onBack: () -> Unit) {
     val place by vm.selected.collectAsState()
@@ -219,7 +221,7 @@ fun PowerScreen(vm: AppViewModel, onBack: () -> Unit) {
                     }
                     if (util.website == null || util.phone == null) Text("Some contact details aren't published in the service-area data. Check your latest electric bill for your utility's outage line.", style = MaterialTheme.typography.bodySmall)
                 }
-                Row { if ((b?.utilities?.size ?: 0) > 1) TextButton(onClick = { pick = true }) { Text("Not right? Choose another") }; TextButton(onClick = { manual = true }) { Text("Enter manually") }; if (p.utility != null) TextButton(onClick = { vm.setUtility(p, null) }) { Text("Reset") } }
+                FlowRow { if ((b?.utilities?.size ?: 0) > 1) TextButton(onClick = { pick = true }) { Text("Not right? Choose another") }; TextButton(onClick = { manual = true }) { Text("Enter manually") }; if (p.utility != null) TextButton(onClick = { vm.setUtility(p, null) }) { Text("Reset") } }
                 Text("Always report outages and get restoration estimates from your utility — it is the primary source.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 b?.let { SourceLine("Electric retail service territories (HIFLD)", it.fetchedAtMs, p.timeZone) }
             }

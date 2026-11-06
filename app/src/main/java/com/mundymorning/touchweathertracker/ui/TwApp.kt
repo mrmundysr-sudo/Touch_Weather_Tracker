@@ -10,6 +10,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -66,7 +67,7 @@ fun TwApp(request: LaunchRequest?, onRequestHandled: () -> Unit) {
                 bottomBar = {
                     NavigationBar {
                         Tab.values().forEach { t ->
-                            NavigationBarItem(selected = tab == t.key, onClick = { tab = t.key }, icon = { Icon(if (tab == t.key) t.selected else t.icon, null) }, label = { Text(t.label) })
+                            NavigationBarItem(selected = tab == t.key, onClick = { tab = t.key }, icon = { Icon(if (tab == t.key) t.selected else t.icon, null) }, label = { Text(t.label, maxLines = 1, softWrap = false, overflow = androidx.compose.ui.text.style.TextOverflow.Clip, fontSize = 11.sp) })
                         }
                     }
                 },

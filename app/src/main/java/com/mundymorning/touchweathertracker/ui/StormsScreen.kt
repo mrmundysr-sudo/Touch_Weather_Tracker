@@ -30,7 +30,7 @@ import com.mundymorning.touchweathertracker.work.EventActionReceiver
 import com.mundymorning.touchweathertracker.work.Notifier
 import kotlin.math.roundToInt
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun StormsScreen(vm: AppViewModel, onOpenStorm: (String) -> Unit) {
     val st by vm.storms.collectAsState()
@@ -64,7 +64,7 @@ fun StormsScreen(vm: AppViewModel, onOpenStorm: (String) -> Unit) {
                     Section("Event mode") { TwCard(container = MaterialTheme.colorScheme.tertiaryContainer) {
                         Text("${s?.name ?: "The storm"} is no longer expected to affect your places", style = MaterialTheme.typography.titleSmall)
                         Text("Official forecasts no longer show a U.S. hurricane landfall and related warnings have ended or aren't in effect for your places. Return to normal refresh settings, or keep event mode on?", style = MaterialTheme.typography.bodyMedium)
-                        Row { TextButton(onClick = { vm.eventAction(EventActionReceiver.ACTION_END, active) }) { Text("Return to normal") }; TextButton(onClick = { vm.eventAction(EventActionReceiver.ACTION_KEEP, active) }) { Text("Keep event mode") } }
+                        FlowRow { TextButton(onClick = { vm.eventAction(EventActionReceiver.ACTION_END, active) }) { Text("Return to normal") }; TextButton(onClick = { vm.eventAction(EventActionReceiver.ACTION_KEEP, active) }) { Text("Keep event mode") } }
                     } }
                 } else Section("Event mode") { TwCard { Text("Event mode is on for ${s?.name ?: active.uppercase()}.", style = MaterialTheme.typography.titleSmall); TextButton(onClick = { vm.eventAction(EventActionReceiver.ACTION_END, active) }) { Text("Return to normal") } } }
             } else if (eligible != null && vm.prefs.eventModeOffers) {
@@ -75,7 +75,7 @@ fun StormsScreen(vm: AppViewModel, onOpenStorm: (String) -> Unit) {
                     Text(ev.reason.orEmpty(), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 4.dp))
                     Text("Event mode helps the app refresh your saved places' storm information and urgent app alerts more often during this event. Android controls background work, so this is never instant or guaranteed.", style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 6.dp))
                     if (details) Text("• Uses your saved places and official NHC/NWS products — no continuous GPS tracking.\n• Refreshes about every 15 minutes instead of 30; Android may delay or batch it.\n• Needs notification permission to alert you.\n• You'll be asked again when the storm no longer threatens your places. You can turn it off in Settings any time.", style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 6.dp))
-                    Row(Modifier.padding(top = 6.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    FlowRow(Modifier.padding(top = 6.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                         Button(onClick = {
                             vm.eventAction(EventActionReceiver.ACTION_ENABLE, eligible.id)
                             if (!Notifier.canPost(ctx) && Build.VERSION.SDK_INT >= 33) notifLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
