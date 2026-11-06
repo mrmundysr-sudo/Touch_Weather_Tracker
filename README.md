@@ -4,7 +4,7 @@ A U.S.-wide everyday weather and severe-weather app for Android and iOS.
 
 ## Claude handoff
 - Android implementation: `claude/android`
-- iOS implementation: `claude/ios`, based on the completed Android app
+- iOS implementation: `claude/ios`, reserved for the iOS counterpart after importing the completed Android implementation
 - Approved product brief: [docs/PRODUCT_VISION.md](docs/PRODUCT_VISION.md)
 - Decisions: [docs/DECISIONS.md](docs/DECISIONS.md)
 - Implementation sequence: [docs/DEVELOPMENT_PLAN.md](docs/DEVELOPMENT_PLAN.md)
