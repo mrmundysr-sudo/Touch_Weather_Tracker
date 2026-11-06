@@ -13,3 +13,12 @@ The full requirements are recorded in [PRODUCT_VISION.md](PRODUCT_VISION.md).
 - Owner will test. Codex and owner will conduct a full app review before any store submission. Do not submit or publish.
 
 Claude has autonomy to make product and engineering decisions that improve quality while keeping to this approved feature set.
+
+## Implementation decisions (Android, 2026-11-06)
+- **Premium feature set (identical on every route):** no banner ads, GFS/ECMWF model-track comparison, and more than Home + 2 saved places. Warnings, forecasts, storm reports, resources and widgets are never gated. Banner ads appear only on Today and never while a warning is active.
+- **Map base:** USGS The National Map (free, public domain) – avoids OpenStreetMap tile-usage limits and paid tiles. Radar via NOAA MRMS from the NWS RIDGE2 map service; satellite via NOAA nowCOAST WMS (GOES).
+- **Location search:** U.S. Census Geocoder + TIGERweb only (no paid geocoder).
+- **ECMWF:** not faked – blocked pending a BUFR decoder (see FEATURE_CHECKLIST).
+- **Blue Roof:** no scraping of the blocked USACE site; use OpenFEMA USACE mission assignments to indicate an active mission.
+- **Notifications:** on-device polling with WorkManager (no server); documented as non-instant.
+- **CI:** the hub reusable workflow produced zero jobs for this public repo, so `autobuild.yml` is self-contained.

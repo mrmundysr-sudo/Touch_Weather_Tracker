@@ -102,5 +102,15 @@ object Notifier {
         NotificationManagerCompat.from(ctx).notify(("end$stormId").hashCode(), n)
     }
 
+    @android.annotation.SuppressLint("MissingPermission")
+    fun postTest(ctx: Context): Boolean {
+        if (!canPost(ctx)) return false
+        createChannels(ctx)
+        val n = NotificationCompat.Builder(ctx, CH_MINOR).setSmallIcon(R.drawable.ic_stat_weather)
+            .setContentTitle("Test notification").setContentText("Notifications from Touch Weather Tracker are working. This is not a weather alert.").build()
+        NotificationManagerCompat.from(ctx).notify(9001, n)
+        return true
+    }
+
     fun cancel(ctx: Context, key: String) = NotificationManagerCompat.from(ctx).cancel(key.hashCode())
 }

@@ -44,10 +44,7 @@ fun SettingsScreen(vm: AppViewModel, onBack: () -> Unit, onPlaces: () -> Unit, o
                     ctx.startActivity(Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, ctx.packageName))
                 }
                 SettingRow(Icons.Outlined.NotificationsActive, "Send a test notification", "Confirms Android will show notifications from this app.") {
-                    if (Notifier.canPost(ctx)) {
-                        Notifier.createChannels(ctx)
-                        androidx.core.app.NotificationManagerCompat.from(ctx).notify(9001, androidx.core.app.NotificationCompat.Builder(ctx, Notifier.CH_MINOR).setSmallIcon(com.mundymorning.touchweathertracker.R.drawable.ic_stat_weather).setContentTitle("Test notification").setContentText("Notifications from Touch Weather Tracker are working. This is not a weather alert.").build())
-                    } else vm.toast("Notifications are turned off for this app in Android settings.")
+                    if (!Notifier.postTest(ctx)) vm.toast("Notifications are turned off for this app in Android settings.")
                 }
                 TwCard(container = MaterialTheme.colorScheme.tertiaryContainer) {
                     Text("Wireless Emergency Alerts", style = MaterialTheme.typography.titleSmall)

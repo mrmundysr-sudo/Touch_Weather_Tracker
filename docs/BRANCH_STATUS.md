@@ -2,8 +2,8 @@
 
 Last updated: 2026-11-06
 
-- `main`: repository default starting point.
-- `claude/android`: Android-first app implementation branch with the Mundy App Template development handoff and approved product brief.
-- `claude/ios`: iOS follow-on branch created from the Android setup baseline. After Android is complete, bring the completed Android implementation into this branch before building the iOS counterpart.
+- `main`: repository default starting point. **Untouched.**
+- `claude/android`: Android implementation (this work). See docs/FEATURE_CHECKLIST.md for the honest state. Head commit and CI evidence are recorded in docs/knowledge/reports/.
+- `claude/ios`: **not started** – begins only after the owner accepts Android (docs/IOS_HANDOFF.md). No iOS code exists; the Linux build environment cannot build iOS.
 
-At this setup commit, application source implementation and build verification have not begun. Before each implementation handoff, verify branch heads, pull requests, commits, and workflow evidence directly in GitHub. Update this file with verified status as work progresses.
+No pull request, merge, release, or store submission has been made.

@@ -185,7 +185,7 @@ fun TodayScreen(vm: AppViewModel, onOpenAlert: (String) -> Unit, onOpenPlaces: (
                             Triple("Humidity", Units.pct(c.humidityPct), Icons.Outlined.WaterDrop),
                             Triple("Dew point", Units.temp(c.dewpointF), Icons.Outlined.Thermostat),
                             Triple("Visibility", Units.miles(c.visibilityMi), Icons.Outlined.Visibility),
-                            Triple("Pressure", c.pressureInHg?.let { String.format("%.2f inHg", it) } ?: "—", Icons.Outlined.Speed),
+                            Triple("Pressure", c.pressureInHg?.let { String.format(java.util.Locale.US, "%.2f inHg", it) } ?: "—", Icons.Outlined.Speed),
                             Triple("Rain, last hour", c.precipLastHourIn?.let { Units.inches(it) } ?: "None reported", Icons.Outlined.Grain),
                             Triple("Feels like", Units.temp(c.feelsLikeF ?: c.tempF), Icons.Outlined.DeviceThermostat),
                         )
