@@ -57,6 +57,9 @@ public struct Place: Codable, Equatable, Identifiable, Sendable {
         self.timeZone = timeZone; self.usesDeviceLocation = usesDeviceLocation; self.alertPrefs = alertPrefs; self.utility = utility
     }
 
+    /// Title for screens: a place saved from a ZIP search shows its city too ("Montpelier · ZIP 05602").
+    public var displayTitle: String { if name.hasPrefix("ZIP "), let city { return "\(city) · \(name)" }; return name }
+
     /// "City, ST" for compact displays; falls back to the saved name until the city is known.
     public var cityState: String {
         if let city, let state { return "\(city), \(state)" }

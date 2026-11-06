@@ -62,11 +62,28 @@ final class TouchWeatherUITests: XCTestCase {
             tab.tap()
             sleep(name == "Map" ? 14 : 12)
             shot(file)
-            if name == "Resources" { app.swipeUp(); shot("51-resources-lower"); app.swipeUp(); shot("52-resources-bottom") }
+            if name == "Alerts" {
+                let all = app.buttons["All active"]
+                if all.exists { all.tap(); sleep(10); shot("31-alerts-all-active") }
+            }
+            if name == "Storms" {
+                let open = button(containing: "Open the storm report")
+                if open.waitForExistence(timeout: 5) { open.tap(); sleep(30); shot("41-storm-report"); app.swipeUp(); shot("42-storm-report-2"); app.swipeUp(); shot("43-storm-report-3"); app.navigationBars.buttons.firstMatch.tap(); sleep(1) }
+            }
+            if name == "Resources" {
+                app.swipeUp(); shot("51-resources-lower"); app.swipeUp(); shot("52-resources-bottom")
+                app.swipeDown(); app.swipeDown(); app.swipeDown()
+                let power = button(containing: "electric utility")
+                if power.waitForExistence(timeout: 5) { power.tap(); sleep(20); shot("53-power"); app.swipeUp(); shot("54-power-2"); app.navigationBars.buttons.firstMatch.tap() }
+            }
         }
 
         app.tabBars.buttons["Today"].tap()
+        sleep(2)
+        app.swipeDown(); app.swipeDown(); app.swipeDown()
         let manage = app.buttons["Manage places"]
-        if manage.waitForExistence(timeout: 10) { manage.tap(); sleep(2); shot("60-places") }
+        if manage.waitForExistence(timeout: 10) { manage.tap(); sleep(2); shot("60-places"); app.navigationBars.buttons.firstMatch.tap(); sleep(1) }
+        let settings = app.buttons["Settings"]
+        if settings.waitForExistence(timeout: 10) { settings.tap(); sleep(2); shot("61-settings") }
     }
 }

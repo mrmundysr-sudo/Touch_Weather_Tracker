@@ -42,7 +42,7 @@ private struct WelcomeStep: View {
             }.padding(28)
         }
     }
-    func row(_ icon: String, _ text: String) -> some View { HStack(spacing: 14) { Image(systemName: icon).frame(width: 28).foregroundStyle(.white); Text(text).foregroundStyle(.white) } }
+    func row(_ icon: String, _ text: String) -> some View { HStack(spacing: 14) { Image(systemName: icon).frame(width: 28).foregroundStyle(.white); Text(text).foregroundStyle(.white).fixedSize(horizontal: false, vertical: true) } }
 }
 
 private struct NotificationsStep: View {

@@ -4,10 +4,13 @@ import TWCore
 struct TodayView: View {
     @EnvironmentObject var model: AppModel
     @State private var expanded: Set<Int64> = []
+    @State private var scrolled = false
 
     var body: some View {
         Group {
-            if let p = model.selected { content(p) }
+            if let p = model.selected { GeometryReader { geo in content(p, topInset: geo.safeAreaInsets.top).overlay(alignment: .top) {
+                // Once scrolled, a blurred scrim keeps content from running under the status bar.
+                Rectangle().fill(.ultraThinMaterial).frame(height: geo.safeAreaInsets.top).opacity(scrolled ? 1 : 0).ignoresSafeArea(edges: .top).allowsHitTesting(false) } } }
             else { EmptyState(icon: "mappin.circle", title: "Add a place", message: "Search by address, ZIP code or city to get your forecast.") }
         }
         .navigationBarHidden(true)
@@ -15,7 +18,7 @@ struct TodayView: View {
         .task(id: model.pendingAlertId) { if let a = model.pendingAlertId { model.pendingAlertId = nil; model.tab = .alerts; _ = a } }
     }
 
-    @ViewBuilder private func content(_ p: Place) -> some View {
+    @ViewBuilder private func content(_ p: Place, topInset: CGFloat) -> some View {
         let st = model.today
         let w = st.weather?.value
         let alerts = (st.alerts?.value?.alerts ?? []).sorted { ($0.level, $0.endMs ?? .max) < ($1.level, $1.endMs ?? .max) }
@@ -23,7 +26,8 @@ struct TodayView: View {
         let activeStorm = model.storms.storms?.value?.max { ($0.intensityKt ?? 0) < ($1.intensityKt ?? 0) }
         ScrollView {
             VStack(spacing: 0) {
-                header(p, w, urgent)
+                header(p, w, urgent, top: topInset)
+                    .background(GeometryReader { Color.clear.preference(key: ScrollOffsetKey.self, value: $0.frame(in: .named("todayScroll")).minY) })
                 if let wl = st.weather, wl.stale { StaleBanner(message: wl.error ?? "Couldn't refresh.", fetchedAtMs: wl.fetchedAtMs, tz: p.timeZone) { model.refreshToday(force: true) } }
                 else if let wl = st.weather, wl.value == nil { ErrorState(message: wl.error ?? "Weather is unavailable.") { model.refreshToday(force: true) } }
                 if let al = st.alerts, al.stale { StaleBanner(message: "Alerts could not be refreshed. Do not assume there are no warnings.", fetchedAtMs: al.fetchedAtMs, tz: p.timeZone) { model.refreshToday(force: true) } }
@@ -77,7 +81,7 @@ struct TodayView: View {
                                     VStack(alignment: .leading, spacing: 6) {
                                         HStack {
                                             Text(i == 0 && !d.name.isEmpty ? d.name : Units.dayName(d.startMs, p.timeZone)).font(.subheadline.weight(.semibold)).frame(width: 92, alignment: .leading)
-                                            Image(systemName: weatherSymbol(d.summary)).symbolRenderingMode(.multicolor).frame(width: 28)
+                                            WxIcon(summary: d.summary, size: 20).frame(width: 28)
                                             VStack(alignment: .leading) {
                                                 Text(d.summary).font(.subheadline).lineLimit(1)
                                                 if let pr = d.precip, pr > 0 { Text("\(Int(pr.rounded()))% precip").font(.caption2).foregroundStyle(Tw.forecast) }
@@ -105,12 +109,14 @@ struct TodayView: View {
                     .font(.caption).foregroundStyle(Tw.onSurfaceMuted).padding(16)
             }
         }
+        .coordinateSpace(name: "todayScroll")
+        .onPreferenceChange(ScrollOffsetKey.self) { scrolled = $0 < -24 }
         .refreshable { model.refreshToday(force: true); model.loadStorms(force: true) }
         .ignoresSafeArea(edges: .top)
     }
 
     // MARK: header (turns urgent when a warning is active)
-    private func header(_ p: Place, _ w: WeatherData?, _ urgent: Bool) -> some View {
+    private func header(_ p: Place, _ w: WeatherData?, _ urgent: Bool, top: CGFloat) -> some View {
         let cond = w?.conditions, hour0 = w?.hourly.first
         let temp = cond?.tempF ?? hour0?.tempF
         let day = groupDays(w?.daily ?? []).first
@@ -124,8 +130,8 @@ struct TodayView: View {
                     HStack(spacing: 6) {
                         Image(systemName: p.usesDeviceLocation ? "location.fill" : p.isHome ? "house.fill" : "mappin")
                         VStack(alignment: .leading, spacing: 0) {
-                            Text(p.name).font(.title3.weight(.semibold)).lineLimit(1)
-                            Text([p.isHome ? "Home" : nil, p.state ?? p.subtitle].compactMap { $0 }.joined(separator: " · ")).font(.caption).opacity(0.85)
+                            Text(p.displayTitle).font(.title3.weight(.semibold)).lineLimit(1)
+                            Text([p.isHome ? "Home" : nil, p.city != nil ? p.cityState : (p.state ?? p.subtitle)].compactMap { $0 }.joined(separator: " · ")).font(.caption).opacity(0.85)
                         }
                         Image(systemName: "chevron.down").font(.caption)
                     }.foregroundStyle(.white).frame(minHeight: 44)
@@ -144,14 +150,14 @@ struct TodayView: View {
             Text([cond?.feelsLikeF.map { "Feels like \(Units.temp($0))" }, day?.high.map { "H \(Units.temp($0))" }, day?.low.map { "L \(Units.temp($0))" }].compactMap { $0 }.joined(separator: "   "))
                 .font(.body).foregroundStyle(.white.opacity(0.92))
         }
-        .padding(.horizontal, 16).padding(.top, 60).padding(.bottom, 24)
+        .padding(.horizontal, 16).padding(.top, top + 8).padding(.bottom, 24)
         .background(LinearGradient(colors: urgent ? [Tw.warning.opacity(0.95), Tw.warning.opacity(0.6), Tw.background] : [Tw.skyDeep, Color(hex: 0x1B5B94).opacity(0.9), Tw.background], startPoint: .top, endPoint: .bottom))
     }
 
     private func hourCell(_ h: HourlyPoint, _ p: Place) -> some View {
         VStack(spacing: 4) {
             Text(Units.clock(h.timeMs, p.timeZone).replacingOccurrences(of: ":00", with: "")).font(.caption.weight(.semibold)).foregroundStyle(Tw.onSurfaceMuted)
-            Image(systemName: weatherSymbol(h.summary, day: h.isDay)).symbolRenderingMode(.multicolor).font(.title3).frame(height: 28)
+            WxIcon(summary: h.summary, day: h.isDay, size: 22).frame(height: 28)
             Text(Units.temp(h.tempF)).font(.headline)
             Text((h.precipChance ?? 0) >= 10 ? "\(Int(h.precipChance!.rounded()))%" : " ").font(.caption2).foregroundStyle(Tw.forecast)
             Text(h.windMph.map { "\(Int($0.rounded())) mph" } ?? "").font(.caption2).foregroundStyle(Tw.onSurfaceMuted)
@@ -197,3 +203,5 @@ struct AlertRow: View {
         }.card(alert.level == .warning ? Tw.errorContainer.opacity(0.55) : Tw.surface).accessibilityElement(children: .combine)
     }
 }
+
+struct ScrollOffsetKey: PreferenceKey { static var defaultValue: CGFloat = 0; static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = nextValue() } }

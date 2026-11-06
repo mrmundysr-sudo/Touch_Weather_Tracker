@@ -108,6 +108,36 @@ struct PetBadge: View {
     }
 }
 
+/// Weather icon. On light surfaces SF Symbols' multicolor clouds are white (invisible), so palette colors are used; on dark/blue backgrounds multicolor is used.
+struct WxIcon: View {
+    let summary: String?
+    var day = true
+    var size: CGFloat = 24
+    var onDark = false
+    private static let cloud = dyn(0x7C93AB, 0xC9D8E8)
+    private static let sun = Color(hex: 0xF5A623)
+    private static let blue = Color(hex: 0x3D9BE9)
+    private static let ice = Color(hex: 0x58B5E8)
+    var body: some View {
+        let sym = Wx.symbol(summary, day: day)
+        if onDark { Image(systemName: sym).symbolRenderingMode(.multicolor).font(.system(size: size)) }
+        else {
+            let c: (Color, Color, Color) = {
+                switch sym {
+                case "sun.max.fill", "moon.stars.fill": return (Self.sun, Self.sun, Self.sun)
+                case "cloud.sun.fill", "cloud.moon.fill": return (Self.cloud, Self.sun, Self.sun)
+                case "cloud.rain.fill": return (Self.cloud, Self.blue, Self.blue)
+                case "cloud.bolt.rain.fill": return (Self.cloud, Self.sun, Self.blue)
+                case "snowflake": return (Self.ice, Self.ice, Self.ice)
+                case "wind": return (Self.blue, Self.blue, Self.blue)
+                default: return (Self.cloud, Self.cloud, Self.cloud)
+                }
+            }()
+            Image(systemName: sym).symbolRenderingMode(.palette).foregroundStyle(c.0, c.1, c.2).font(.system(size: size))
+        }
+    }
+}
+
 struct LinkButton: View {
     let title: String, url: String
     var icon = "arrow.up.right.square"

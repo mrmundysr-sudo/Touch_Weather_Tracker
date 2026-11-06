@@ -21,7 +21,7 @@ struct PlacesView: View {
                             Image(systemName: p.isHome ? "house.fill" : "house").font(.title2).foregroundStyle(p.isHome ? Tw.primary : Tw.onSurfaceMuted).frame(width: 44, height: 44)
                         }.buttonStyle(.plain).accessibilityLabel(p.isHome ? "\(p.name) is your Home" : "Make \(p.name) your Home")
                         VStack(alignment: .leading, spacing: 4) {
-                            Text(p.name).font(.headline)
+                            Text(p.displayTitle).font(.headline)
                             Text([p.subtitle, p.countyName].compactMap { $0 }.joined(separator: " · ")).font(.caption).foregroundStyle(Tw.onSurfaceMuted)
                             HStack(spacing: 6) {
                                 if p.isHome { chip("Home") }; if p.isDefault && !p.isHome { chip("Default") }
