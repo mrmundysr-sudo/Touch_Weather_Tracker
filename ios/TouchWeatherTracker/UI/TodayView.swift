@@ -5,12 +5,17 @@ struct TodayView: View {
     @EnvironmentObject var model: AppModel
     @State private var expanded: Set<Int64> = []
     @State private var scrolled = false
+    /// Status-bar / Dynamic Island height (read from UIKit so it is valid before layout).
+    static var topInset: CGFloat {
+        UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first?.keyWindow?.safeAreaInsets.top ?? 54
+    }
 
     var body: some View {
         Group {
-            if let p = model.selected { GeometryReader { geo in content(p, topInset: geo.safeAreaInsets.top).overlay(alignment: .top) {
+            if let p = model.selected {
                 // Once scrolled, a blurred scrim keeps content from running under the status bar.
-                Rectangle().fill(.regularMaterial).frame(height: geo.safeAreaInsets.top).opacity(scrolled ? 1 : 0).allowsHitTesting(false) } } }
+                content(p, topInset: Self.topInset).overlay(alignment: .top) { StatusBarScrim(visible: scrolled, height: Self.topInset) }
+            }
             else { EmptyState(icon: "mappin.circle", title: "Add a place", message: "Search by address, ZIP code or city to get your forecast.") }
         }
         .navigationBarHidden(true)
@@ -111,6 +116,7 @@ struct TodayView: View {
         }
         .coordinateSpace(name: "todayScroll")
         .onPreferenceChange(ScrollOffsetKey.self) { scrolled = $0 < -24 }
+        .modifier(ScrollTracker { scrolled = $0 > 24 })
         .refreshable { model.refreshToday(force: true); model.loadStorms(force: true) }
         .ignoresSafeArea(edges: .top)
     }
@@ -205,3 +211,18 @@ struct AlertRow: View {
 }
 
 struct ScrollOffsetKey: PreferenceKey { static var defaultValue: CGFloat = 0; static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = nextValue() } }
+
+struct StatusBarScrim: View {
+    let visible: Bool
+    let height: CGFloat
+    var body: some View { Rectangle().fill(.regularMaterial).frame(height: height).opacity(visible ? 1 : 0).allowsHitTesting(false).animation(.easeInOut(duration: 0.15), value: visible) }
+}
+
+/// iOS 18+: direct scroll-offset callback (the preference-based tracker above covers iOS 17).
+struct ScrollTracker: ViewModifier {
+    let onOffset: (CGFloat) -> Void
+    func body(content: Content) -> some View {
+        if #available(iOS 18.0, *) { content.onScrollGeometryChange(for: CGFloat.self) { $0.contentOffset.y } action: { _, new in onOffset(new) } }
+        else { content }
+    }
+}

@@ -35,6 +35,10 @@ targets:
     platform: iOS
     sources:
       - path: TouchWeatherTracker
+      - path: Shared
+      # The widget views are also compiled into the app so a CI-only (TWC_UITEST) gallery can render them with real data in the simulator.
+      - path: TouchWeatherWidgets
+        includes: ["WidgetData.swift", "WeatherWidgets.swift", "StormWatchWidget.swift"]
     dependencies:
       - package: TWCore
       - package: GoogleMobileAds
@@ -73,7 +77,9 @@ targets:
     type: app-extension
     platform: iOS
     sources:
+      - path: Shared
       - path: TouchWeatherWidgets
+        excludes: ["Info.plist", "*.entitlements"]
     dependencies:
       - package: TWCore
     settings:

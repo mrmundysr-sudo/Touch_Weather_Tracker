@@ -86,4 +86,14 @@ final class TouchWeatherUITests: XCTestCase {
         let settings = app.buttons["Settings"]
         if settings.waitForExistence(timeout: 10) { settings.tap(); sleep(2); shot("61-settings") }
     }
+
+    /// Runs after the test above (same install, data persists): renders the real widget views with the real cached data at standard widget sizes.
+    func testWidgetGallery() throws {
+        app.launchArguments += ["-twc-widget-gallery"]
+        app.launch()
+        require(app.staticTexts["Widget gallery (CI)"], 30, "gallery", "widget gallery did not appear")
+        sleep(25)
+        shot("70-widgets-1")
+        for i in 2...6 { app.swipeUp(); sleep(1); shot("7\(i - 1)-widgets-\(i)") }
+    }
 }

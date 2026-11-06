@@ -10,6 +10,20 @@ struct RootView: View {
     var body: some View {
         ZStack {
             Tw.background.ignoresSafeArea()
+            #if TWC_UITEST
+            if ProcessInfo.processInfo.arguments.contains("-twc-widget-gallery") { WidgetGalleryView() } else { mainContent }
+            #else
+            mainContent
+            #endif
+        }
+        .task { mon.startAds(); await mon.loadProducts(); await mon.refreshEntitlements() }
+        .onReceive(tick) { _ in mon.refresh() }          // re-evaluate against the clock so a 24 h unlock locks again on time
+        .overlay(alignment: .bottom) { if let m = model.message { Toast(text: m).onAppear { DispatchQueue.main.asyncAfter(deadline: .now() + 4) { if model.message == m { model.message = nil } } } } }
+        .animation(.default, value: model.message)
+    }
+
+    @ViewBuilder private var mainContent: some View {
+        Group {
             if !onboarded || model.places.isEmpty {
                 OnboardingView { model.prefs.onboarded = true; onboarded = true; BackgroundRefresh.schedule(eventMode: false); model.refreshToday() }
             } else if !mon.premium {
@@ -19,10 +33,6 @@ struct RootView: View {
                 MainTabs()
             }
         }
-        .task { mon.startAds(); await mon.loadProducts(); await mon.refreshEntitlements() }
-        .onReceive(tick) { _ in mon.refresh() }          // re-evaluate against the clock so a 24 h unlock locks again on time
-        .overlay(alignment: .bottom) { if let m = model.message { Toast(text: m).onAppear { DispatchQueue.main.asyncAfter(deadline: .now() + 4) { if model.message == m { model.message = nil } } } } }
-        .animation(.default, value: model.message)
     }
 }
 

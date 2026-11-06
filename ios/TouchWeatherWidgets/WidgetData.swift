@@ -4,9 +4,6 @@ import WidgetKit
 import AppIntents
 import TWCore
 
-/// SwiftUI also defines `Alert`; make the weather alert model win inside this module.
-typealias Alert = TWCore.Alert
-
 /// Everything a widget needs, read from the shared on-device store (widgets refresh stale data themselves within a short time limit).
 struct WxEntry: TimelineEntry {
     var date: Date
@@ -33,7 +30,6 @@ struct WxEntry: TimelineEntry {
     static func placeholder() -> WxEntry { WxEntry(date: Date(), locked: false, hasSharedContainer: true, place: nil, label: "Your city, ST", weather: nil, alerts: nil, storms: nil, stormsFetchedMs: nil) }
 }
 
-extension Color { init(hex: UInt32) { self.init(red: Double((hex >> 16) & 0xFF) / 255, green: Double((hex >> 8) & 0xFF) / 255, blue: Double(hex & 0xFF) / 255) } }
 
 enum WidgetEnvironment {
     static let appGroup = "group.com.mundymorning.touchweathertracker"
@@ -42,15 +38,6 @@ enum WidgetEnvironment {
         let base = container?.appendingPathComponent("store", isDirectory: true)
             ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("store", isDirectory: true)
         return Repository(store: Store(directory: base), prefs: Prefs(suiteName: container != nil ? appGroup : nil))
-    }
-}
-
-/// Runs `body` but gives up waiting after `seconds` (widget refresh budgets are small).
-func withTimeout(_ seconds: Double, _ body: @escaping @Sendable () async -> Void) async {
-    await withTaskGroup(of: Void.self) { g in
-        g.addTask { await body() }
-        g.addTask { try? await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000)) }
-        _ = await g.next(); g.cancelAll()
     }
 }
 

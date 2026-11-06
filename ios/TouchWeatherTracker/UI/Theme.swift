@@ -7,7 +7,6 @@ func dyn(_ light: UInt32, _ dark: UInt32) -> Color {
     Color(UIColor { $0.userInterfaceStyle == .dark ? UIColor(hex: dark) : UIColor(hex: light) })
 }
 extension UIColor { convenience init(hex: UInt32) { self.init(red: CGFloat((hex >> 16) & 0xFF) / 255, green: CGFloat((hex >> 8) & 0xFF) / 255, blue: CGFloat(hex & 0xFF) / 255, alpha: 1) } }
-extension Color { init(hex: UInt32) { self.init(UIColor(hex: hex)) } }
 
 /// Severity and semantic palette. Colors are never the only signal: every use also carries an icon and a text label.
 enum Tw {

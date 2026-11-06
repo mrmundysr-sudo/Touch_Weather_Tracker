@@ -48,10 +48,3 @@ struct StormWatchWidget: Widget {
             .supportedFamilies([.systemSmall, .systemMedium, .accessoryRectangular])
     }
 }
-
-@main
-struct TWWidgetsBundle: WidgetBundle {
-    var body: some Widget {
-        TempWidget(); HourlyWidget(); TodayWidget(); FiveDayWidget(); SavedPlaceWidget(); StormWatchWidget()
-    }
-}
