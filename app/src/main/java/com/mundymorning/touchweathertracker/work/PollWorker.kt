@@ -12,6 +12,8 @@ class PollWorker(ctx: Context, params: WorkerParameters) : CoroutineWorker(ctx, 
     override suspend fun doWork(): Result {
         val app = applicationContext as TouchWeatherApp
         val repo = app.repo
+        // Locked app does no background work (no refresh, no notifications) until unlocked again.
+        if (!repo.prefs.premiumActive) return Result.success()
         Notifier.createChannels(applicationContext)
         return try {
             AlertEngine.poll(applicationContext, repo)

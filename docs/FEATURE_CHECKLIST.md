@@ -14,7 +14,7 @@ Legend: **Implemented** = code complete and compiled/unit-checked here; **Implem
 | Radar (NOAA MRMS via RIDGE2 service) | Implemented with limits | Service reports no scan time; NWS radar-display/direct-MRMS fallbacks not built |
 | Satellite (GOES visible/IR/water vapor via nowCOAST) with track overlay toggle | Implemented | Verified a live GetMap tile |
 | NHC official track, cone, watches/warnings, past track, advisory text, key messages | Implemented with limits | **No tropical cyclone was active during development (Nov)**, so graphics layer field handling (watch/warning colours) is verified only against the service schema, not a live storm; ATCF/advisory parsing verified on archived 2026 storms |
-| GFS model track (labelled guidance, separate) | Implemented | ATCF `AVNO`; premium feature |
+| GFS model track (labelled guidance, separate) | Implemented | ATCF `AVNO`; shown to every unlocked user |
 | ECMWF model track | **Blocked** | ECMWF open data publishes tracks only as BUFR (`*-tf.bufr`) with ECMWF local descriptors; needs a table-driven BUFR decoder (or a server). Next action: decide between a vetted BUFR library and a decoder with WMO/ECMWF tables. UI shows "no ECMWF track available" and never estimates |
 | Plain-language storm report (what's happening / forecast here / measured nearby / warnings) with source+time labels and details panel | Implemented | Pure builder with unit tests; recon/buoy/gauge verified live; omits missing data |
 | Recon (HDOB, VDM, dropsonde MBL wind) | Implemented with limits | Parsers verified on live archive; dropsonde decoding limited to release time/position/mean boundary-layer wind |
@@ -27,8 +27,8 @@ Legend: **Implemented** = code complete and compiled/unit-checked here; **Implem
 | Resources: food / water / charging | Implemented with limits | **No viable official live feed**; app links to 211, Feeding America, Red Cross and never lists unverified sites as open |
 | USACE Operation Blue Roof | Implemented with limits | Active mission inferred from OpenFEMA USACE mission assignments mentioning roofing; county eligibility/sign-up via USACE (their site blocks automated access) |
 | Widgets: Everyday Weather, Saved Place (configurable), Storm Watch | Implemented | Glance; timestamps shown; OS-controlled refresh; not tested on a launcher |
-| Monetization: ads, 4 rewarded views → 24 h, ad-free purchase, subscription, restore, entitlement state | Implemented with limits | Real Play Billing/AdMob code. **Needs Play Console products and the owner's AdMob ids** (test ids used). Play subscriptions are per-app, so a true all-apps entitlement needs separate owner infrastructure |
-| Premium = identical features on every route (ad-free, GFS/ECMWF comparison, >3 places). Safety info never gated; no ad over warnings (banner only on Today, hidden during warnings) | Implemented | Decision recorded in DECISIONS.md |
+| Monetization: app locked until 4 rewarded ads (24 h), buy the app, or all-apps subscription; restore; entitlement state; no banner ads | Implemented with limits | Real Play Billing/AdMob code. **Needs Play Console products and the owner's AdMob ids** (test ids used). Locked app does no background work/notifications (see MONETIZATION.md safety note). Play subscriptions are per-app, so a true all-apps entitlement needs separate owner infrastructure |
+| Every unlock route gives the identical complete app | Implemented | Single gate; nothing is gated inside the app |
 | Onboarding, progressive permissions (notifications, location when tapped) | Implemented | |
 | Accessibility: non-color severity (icon+label), 48 dp targets, content descriptions, dark/light, dynamic text | Implemented with limits | No TalkBack/large-font pass was possible without a device |
 | Localization-ready strings | **Not done** | UI text is hard-coded in Kotlin; extracting to `strings.xml` is a mechanical follow-up |

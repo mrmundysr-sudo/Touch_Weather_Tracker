@@ -21,7 +21,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
-import com.mundymorning.touchweathertracker.billing.PremiumFeature
 import com.mundymorning.touchweathertracker.core.Geo
 import com.mundymorning.touchweathertracker.core.Units
 import com.mundymorning.touchweathertracker.data.*
@@ -47,7 +46,7 @@ private fun dot(ctx: android.content.Context, color: Int, sizeDp: Int = 18): Gra
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MapScreen(vm: AppViewModel, focus: MapFocus?, onFocusConsumed: () -> Unit, onOpenAlert: (String) -> Unit, onOpenStorm: (String) -> Unit, onOpenPremium: () -> Unit) {
+fun MapScreen(vm: AppViewModel, focus: MapFocus?, onFocusConsumed: () -> Unit, onOpenAlert: (String) -> Unit, onOpenStorm: (String) -> Unit) {
     val ctx = LocalContext.current
     val prefs = vm.prefs
     val place by vm.selected.collectAsState()
@@ -55,7 +54,6 @@ fun MapScreen(vm: AppViewModel, focus: MapFocus?, onFocusConsumed: () -> Unit, o
     val storms by vm.storms.collectAsState()
     val bundles by vm.bundles.collectAsState()
     val feed by vm.feed.collectAsState()
-    val ent by vm.mon.state.collectAsState()
     var radar by remember { mutableStateOf(prefs.mapRadar) }
     var sat by remember { mutableStateOf(prefs.mapSatellite) }
     var warn by remember { mutableStateOf(prefs.mapWarnings) }
@@ -106,7 +104,7 @@ fun MapScreen(vm: AppViewModel, focus: MapFocus?, onFocusConsumed: () -> Unit, o
 
         // Rebuild overlays whenever any input changes.
         val alertsForMap = feed.data?.value?.map { it.first }.orEmpty()
-        LaunchedEffect(radar, sat, warn, tracks, obs, gfs, ecmwf, imagery, tick, places, bundles, alertsForMap, buoys, ent.premium) {
+        LaunchedEffect(radar, sat, warn, tracks, obs, gfs, ecmwf, imagery, tick, places, bundles, alertsForMap, buoys) {
             val m = mapRef.value ?: return@LaunchedEffect
             m.setTileSource(if (imagery) UsgsTileSource("usgs-imagery", "USGSImageryTopo") else UsgsTileSource("usgs-topo", "USGSTopo"))
             m.overlays.clear()
@@ -150,8 +148,8 @@ fun MapScreen(vm: AppViewModel, focus: MapFocus?, onFocusConsumed: () -> Unit, o
                 // Official forecast track from ATCF if the ArcGIS graphics are unavailable.
                 if (b.graphics?.track.isNullOrEmpty()) b.official?.let { t -> m.overlays += Polyline(m).apply { setPoints(t.points.map { GeoPoint(it.lat, it.lon) }); outlinePaint.color = AColor.rgb(11, 42, 74); outlinePaint.strokeWidth = 7f; title = "Official NHC forecast track" } }
                 b.official?.points?.forEach { p -> m.overlays += Marker(m).apply { position = GeoPoint(p.lat, p.lon); icon = dot(ctx, AColor.rgb(11, 42, 74), 12); setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER); title = "NHC forecast +${p.tauHours} h"; snippet = p.vmaxKt?.let { "Max wind ${StormMph(it)} mph" } } }
-                if (gfs && ent.premium) b.gfs?.let { t -> m.overlays += Polyline(m).apply { setPoints(t.points.map { GeoPoint(it.lat, it.lon) }); outlinePaint.color = AColor.rgb(123, 31, 162); outlinePaint.strokeWidth = 5f; outlinePaint.pathEffect = DashPathEffect(floatArrayOf(18f, 12f), 0f); title = "GFS model guidance (not official)"; snippet = "Initialized ${t.initDtg}Z" } }
-                if (ecmwf && ent.premium) b.ecmwf?.let { t -> m.overlays += Polyline(m).apply { setPoints(t.points.map { GeoPoint(it.lat, it.lon) }); outlinePaint.color = AColor.rgb(0, 150, 136); outlinePaint.strokeWidth = 5f; outlinePaint.pathEffect = DashPathEffect(floatArrayOf(6f, 10f), 0f); title = "ECMWF model guidance (not official)" } }
+                if (gfs) b.gfs?.let { t -> m.overlays += Polyline(m).apply { setPoints(t.points.map { GeoPoint(it.lat, it.lon) }); outlinePaint.color = AColor.rgb(123, 31, 162); outlinePaint.strokeWidth = 5f; outlinePaint.pathEffect = DashPathEffect(floatArrayOf(18f, 12f), 0f); title = "GFS model guidance (not official)"; snippet = "Initialized ${t.initDtg}Z" } }
+                if (ecmwf) b.ecmwf?.let { t -> m.overlays += Polyline(m).apply { setPoints(t.points.map { GeoPoint(it.lat, it.lon) }); outlinePaint.color = AColor.rgb(0, 150, 136); outlinePaint.strokeWidth = 5f; outlinePaint.pathEffect = DashPathEffect(floatArrayOf(6f, 10f), 0f); title = "ECMWF model guidance (not official)" } }
                 m.overlays += Marker(m).apply { position = GeoPoint(b.storm.lat, b.storm.lon); icon = dot(ctx, AColor.rgb(213, 0, 0), 24); setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER); title = "${b.storm.classLabel} ${b.storm.name}"; snippet = "Tap for the storm report"
                     setOnMarkerClickListener { mk, _ -> mk.showInfoWindow(); onOpenStorm(b.storm.id); true } }
             }
@@ -199,9 +197,8 @@ fun MapScreen(vm: AppViewModel, focus: MapFocus?, onFocusConsumed: () -> Unit, o
             LayerSwitch("Satellite-style basemap", "USGS imagery instead of topographic", imagery) { imagery = it; prefs.mapImagery = it }
             HorizontalDivider(Modifier.padding(vertical = 8.dp))
             Text("Model guidance (not the official forecast)", style = MaterialTheme.typography.titleSmall)
-            if (!ent.premium) { Text("GFS and ECMWF comparison is a premium feature.", style = MaterialTheme.typography.bodySmall); TextButton(onClick = { sheet = false; onOpenPremium() }) { Text("See premium options") } }
-            LayerSwitch("GFS track", "Dashed purple · NOAA model guidance", gfs && ent.premium, enabled = ent.premium) { gfs = it; prefs.mapGfs = it }
-            LayerSwitch("ECMWF track", "Dashed teal · European model guidance", ecmwf && ent.premium, enabled = ent.premium) { ecmwf = it; prefs.mapEcmwf = it }
+            LayerSwitch("GFS track", "Dashed purple · NOAA model guidance", gfs) { gfs = it; prefs.mapGfs = it }
+            LayerSwitch("ECMWF track", "Dashed teal · European model guidance", ecmwf) { ecmwf = it; prefs.mapEcmwf = it }
             Text("Models can disagree. Don't treat any model line as a forecast — the NHC track and cone are the official forecast.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }

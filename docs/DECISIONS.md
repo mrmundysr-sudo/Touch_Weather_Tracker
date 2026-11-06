@@ -15,7 +15,7 @@ The full requirements are recorded in [PRODUCT_VISION.md](PRODUCT_VISION.md).
 Claude has autonomy to make product and engineering decisions that improve quality while keeping to this approved feature set.
 
 ## Implementation decisions (Android, 2026-11-06)
-- **Premium feature set (identical on every route):** no banner ads, GFS/ECMWF model-track comparison, and more than Home + 2 saved places. Warnings, forecasts, storm reports, resources and widgets are never gated. Banner ads appear only on Today and never while a warning is active.
+- **Monetization (owner-corrected 2026-11-06):** no banner ads. The whole app is locked until the user watches 4 rewarded ads (24 h of full use), buys the app, or subscribes to all apps; every route unlocks the identical, complete app (no reduced tier, no feature gating inside the app). While locked there is no background refresh or notifications; the unlock screen says to keep Wireless Emergency Alerts on. My first pass had a free tier with a Today banner and gated a few extras – that was wrong and was removed.
 - **Map base:** USGS The National Map (free, public domain) – avoids OpenStreetMap tile-usage limits and paid tiles. Radar via NOAA MRMS from the NWS RIDGE2 map service; satellite via NOAA nowCOAST WMS (GOES).
 - **Location search:** U.S. Census Geocoder + TIGERweb only (no paid geocoder).
 - **ECMWF:** not faked – blocked pending a BUFR decoder (see FEATURE_CHECKLIST).

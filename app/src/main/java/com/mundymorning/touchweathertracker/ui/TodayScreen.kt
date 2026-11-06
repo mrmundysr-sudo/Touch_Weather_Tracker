@@ -63,12 +63,11 @@ fun groupDays(periods: List<DailyPoint>): List<DayRow> {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TodayScreen(vm: AppViewModel, onOpenAlert: (String) -> Unit, onOpenPlaces: () -> Unit, onOpenSettings: () -> Unit, onOpenStorms: () -> Unit, onOpenAlerts: () -> Unit, onOpenPremium: () -> Unit) {
+fun TodayScreen(vm: AppViewModel, onOpenAlert: (String) -> Unit, onOpenPlaces: () -> Unit, onOpenSettings: () -> Unit, onOpenStorms: () -> Unit, onOpenAlerts: () -> Unit) {
     val place by vm.selected.collectAsState()
     val places by vm.places.collectAsState()
     val st by vm.today.collectAsState()
-    val ent by vm.mon.state.collectAsState()
-    val storms by vm.storms.collectAsState()
+        val storms by vm.storms.collectAsState()
     LaunchedEffect(place?.id) { vm.refreshToday(); vm.loadStorms() }
     val p = place
     if (p == null) { EmptyState(Icons.Outlined.Place, "Add a place", "Search by address, ZIP code or city to get your forecast.", Modifier.padding(top = 80.dp)) { Button(onClick = onOpenPlaces) { Text("Add a place") } }; return }
@@ -245,11 +244,6 @@ fun TodayScreen(vm: AppViewModel, onOpenAlert: (String) -> Unit, onOpenPlaces: (
                 }
             }
 
-            // ---------- Ads (never while a warning is active) ----------
-            if (!ent.premium && !urgent) {
-                AdBanner(canRequest = vm.mon.canRequestAds(LocalContext.current))
-                TextButton(onClick = onOpenPremium, modifier = Modifier.align(Alignment.CenterHorizontally)) { Text("Remove ads") }
-            }
             Text("Data from the National Weather Service and other U.S. government sources. Not an endorsement by any agency. For emergencies, follow official instructions and keep Wireless Emergency Alerts enabled.",
                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(16.dp))
             Spacer(Modifier.height(24.dp))

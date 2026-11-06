@@ -35,15 +35,9 @@ data class Entitlement(
     val message: String? = null,
 )
 
-/** The premium features. Every premium route (4 ads / ad-free purchase / subscription) unlocks exactly this same set. Safety information is never gated. */
-enum class PremiumFeature(val title: String, val blurb: String) {
-    AD_FREE("No ads", "Removes banner ads everywhere."),
-    MODEL_TRACKS("Model track comparison", "Overlay GFS and ECMWF guidance on the NHC forecast."),
-    MORE_PLACES("More saved places", "Save more than Home plus two other places."),
-}
-
 /**
- * Ads (AdMob rewarded + banner, with UMP consent) and purchases (Google Play Billing) feeding one entitlement.
+ * The whole app is locked unless the user has an entitlement: four completed rewarded ads (24 hours of use), the ad-free purchase, or the
+ * subscription. There are no banner ads. Rewarded ads use AdMob with UMP consent; purchases use Google Play Billing.
  * Product ids must exist in Play Console (see docs/MONETIZATION.md). Without them the paywall states plainly that purchases are unavailable.
  */
 class Monetization(private val app: Context, private val prefs: Prefs) : PurchasesUpdatedListener {
@@ -52,7 +46,6 @@ class Monetization(private val app: Context, private val prefs: Prefs) : Purchas
         const val UNLOCK_MS = 24L * 60 * 60 * 1000
         const val PRODUCT_AD_FREE = "ad_free_premium"          // one-time purchase
         const val PRODUCT_SUBSCRIPTION = "all_apps_subscription" // subscription (all-apps pass)
-        const val FREE_EXTRA_PLACES = 2
     }
 
     private var lastMessage: String? = null
@@ -87,8 +80,8 @@ class Monetization(private val app: Context, private val prefs: Prefs) : Purchas
     private fun publish(msg: String? = null) { lastMessage = msg; _state.value = compute(msg) }
 
     fun refresh() = publish(_state.value.message)
-    fun has(f: PremiumFeature) = _state.value.premium
-    val adsVisible: Boolean get() = !_state.value.premium
+    /** True when the app may be used. Re-evaluated against the clock so a 24-hour unlock expires on time. */
+    val unlocked: Boolean get() = prefs.premiumActive
 
     // ---------------------------------------------------- ads
     /** Gather consent (UMP) then initialise the Mobile Ads SDK. Must be called from an Activity. */

@@ -45,6 +45,11 @@ private fun open(tab: String, placeId: String? = null) = actionStartActivity(
 
 private fun stamp(ms: Long?, tz: String?) = ms?.let { "Updated ${Units.clock(it, tz)}" } ?: "Not updated yet"
 
+private fun locked(ctx: Context) = !repo(ctx).prefs.premiumActive
+
+@androidx.compose.runtime.Composable
+private fun Locked() = Empty("Locked — open Touch Weather Tracker to unlock", "today")
+
 @androidx.compose.runtime.Composable
 private fun Empty(msg: String, tab: String) {
     Box(GlanceModifier.fillMaxSize().background(BG).padding(12.dp).clickable(open(tab)), contentAlignment = Alignment.Center) {
@@ -97,8 +102,9 @@ class EverydayWeatherWidget : GlanceAppWidget() {
         val r = repo(context)
         val place = r.selected()
         val w = place?.let { r.cachedWeather(it.id)?.value }
+        val isLocked = locked(context)
         provideContent {
-            if (place == null) Empty("Open Touch Weather Tracker to add a place", "today") else WeatherBlock(place, w, null, LocalSize.current, false, "today")
+            if (isLocked) Locked() else if (place == null) Empty("Open Touch Weather Tracker to add a place", "today") else WeatherBlock(place, w, null, LocalSize.current, false, "today")
         }
     }
 }
@@ -111,8 +117,9 @@ class SavedPlaceWidget : GlanceAppWidget() {
         val place = r.prefs.widgetPlace(wid)?.let { pid -> r.places.value.firstOrNull { it.id == pid } }
         val w = place?.let { r.cachedWeather(it.id)?.value }
         val alerts = place?.let { r.store.read("alerts_${it.id}", AlertSet.serializer())?.alerts }
+        val isLocked = locked(context)
         provideContent {
-            if (place == null) Empty("Tap to choose a saved place", "today") else WeatherBlock(place, w, alerts, LocalSize.current, true, "alerts")
+            if (isLocked) Locked() else if (place == null) Empty("Tap to choose a saved place", "today") else WeatherBlock(place, w, alerts, LocalSize.current, true, "alerts")
         }
     }
 }
@@ -125,7 +132,9 @@ class StormWatchWidget : GlanceAppWidget() {
         val cached = r.store.read("storms", Cached.serializer(kotlinx.serialization.builtins.ListSerializer(StormSnapshot.serializer())))
         val storms = cached?.value?.map { it.toStorm() }.orEmpty()
         val fetched = cached?.fetchedAtMs
+        val isLocked = locked(context)
         provideContent {
+            if (isLocked) { Locked(); return@provideContent }
             val size = LocalSize.current
             Column(GlanceModifier.fillMaxSize().background(BG).padding(12.dp).clickable(open("storms"))) {
                 Text("Storm Watch", style = t(12, true, MUTED))

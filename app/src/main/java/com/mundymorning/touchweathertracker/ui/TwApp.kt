@@ -51,6 +51,18 @@ fun TwApp(request: LaunchRequest?, onRequestHandled: () -> Unit) {
         return
     }
 
+    // The whole app is locked until the user has an entitlement (4 ads = 24 h, ad-free purchase, or subscription).
+    val ent by vm.mon.state.collectAsState()
+    LaunchedEffect(ent.premium, ent.unlockUntilMs) {
+        // Re-evaluate against the clock so a 24-hour unlock locks the app again when it expires.
+        while (true) { kotlinx.coroutines.delay(15_000); vm.mon.refresh() }
+    }
+    if (!ent.premium) {
+        PaywallScreen(vm, onBack = null)
+        Box(Modifier.fillMaxSize()) { SnackbarHost(snack, Modifier.align(androidx.compose.ui.Alignment.BottomCenter)) }
+        return
+    }
+
     LaunchedEffect(request?.nonce) {
         val r = request ?: return@LaunchedEffect
         r.placeId?.let { vm.selectPlace(it) }
@@ -76,8 +88,8 @@ fun TwApp(request: LaunchRequest?, onRequestHandled: () -> Unit) {
                     when (tab) {
                         "today" -> TodayScreen(vm,
                             onOpenAlert = { nav.navigate("alert/${java.net.URLEncoder.encode(it, "UTF-8")}") }, onOpenPlaces = { nav.navigate("places") }, onOpenSettings = { nav.navigate("settings") },
-                            onOpenStorms = { tab = "storms" }, onOpenAlerts = { tab = "alerts" }, onOpenPremium = { nav.navigate("premium") })
-                        "map" -> MapScreen(vm, mapFocus, { mapFocus = null }, onOpenAlert = { nav.navigate("alert/${java.net.URLEncoder.encode(it, "UTF-8")}") }, onOpenStorm = { nav.navigate("storm/$it") }, onOpenPremium = { nav.navigate("premium") })
+                            onOpenStorms = { tab = "storms" }, onOpenAlerts = { tab = "alerts" })
+                        "map" -> MapScreen(vm, mapFocus, { mapFocus = null }, onOpenAlert = { nav.navigate("alert/${java.net.URLEncoder.encode(it, "UTF-8")}") }, onOpenStorm = { nav.navigate("storm/$it") })
                         "alerts" -> AlertsScreen(vm, onOpenAlert = { nav.navigate("alert/${java.net.URLEncoder.encode(it, "UTF-8")}") }, onManageAreas = { nav.navigate("places") })
                         "storms" -> StormsScreen(vm, onOpenStorm = { nav.navigate("storm/$it") })
                         "resources" -> ResourcesScreen(vm, onOpenPower = { nav.navigate("power") })
@@ -94,7 +106,7 @@ fun TwApp(request: LaunchRequest?, onRequestHandled: () -> Unit) {
         }
         composable("places") { PlacesScreen(vm, onBack = { nav.popBackStack() }, onAdd = { home -> nav.navigate("search/$home") }, onFavorites = { nav.navigate("favorites") }, onOpenPlace = { tab = "today"; nav.popBackStack("main", false) }) }
         composable("search/{home}", arguments = listOf(navArgument("home") { type = NavType.BoolType })) { e ->
-            SearchPlaceScreen(vm, e.arguments?.getBoolean("home") ?: false, onBack = { nav.popBackStack() }, onDone = { nav.popBackStack() }, onOpenPaywall = { nav.navigate("premium") }, onPinOnMap = { tab = "map"; vm.toast("Long-press the map to drop a pin."); nav.popBackStack("main", false) })
+            SearchPlaceScreen(vm, e.arguments?.getBoolean("home") ?: false, onBack = { nav.popBackStack() }, onDone = { nav.popBackStack() }, onPinOnMap = { tab = "map"; vm.toast("Long-press the map to drop a pin."); nav.popBackStack("main", false) })
         }
         composable("favorites") { FavoritesPickerScreen(vm) { nav.popBackStack() } }
         composable("settings") { SettingsScreen(vm, onBack = { nav.popBackStack() }, onPlaces = { nav.navigate("places") }, onPremium = { nav.navigate("premium") }, onSources = { nav.navigate("sources") }) }
@@ -103,7 +115,7 @@ fun TwApp(request: LaunchRequest?, onRequestHandled: () -> Unit) {
         composable("power") { PowerScreen(vm) { nav.popBackStack() } }
         composable("storm/{id}", arguments = listOf(navArgument("id") { type = NavType.StringType })) { e ->
             StormDetailScreen(vm, e.arguments?.getString("id").orEmpty(), onBack = { nav.popBackStack() },
-                onShowOnMap = { s -> mapFocus = MapFocus(s.lat, s.lon, 6.0); tab = "map"; nav.popBackStack("main", false) }, onOpenPremium = { nav.navigate("premium") })
+                onShowOnMap = { s -> mapFocus = MapFocus(s.lat, s.lon, 6.0); tab = "map"; nav.popBackStack("main", false) })
         }
     }
 }

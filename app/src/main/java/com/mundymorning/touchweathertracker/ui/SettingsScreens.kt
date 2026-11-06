@@ -19,7 +19,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.mundymorning.touchweathertracker.BuildConfig
 import com.mundymorning.touchweathertracker.billing.Monetization
-import com.mundymorning.touchweathertracker.billing.PremiumFeature
 import com.mundymorning.touchweathertracker.billing.PremiumSource
 import com.mundymorning.touchweathertracker.core.Units
 import com.mundymorning.touchweathertracker.work.EventActionReceiver
@@ -64,9 +63,9 @@ fun SettingsScreen(vm: AppViewModel, onBack: () -> Unit, onPlaces: () -> Unit, o
                     }
                 } else Text("Event mode is off. Normal background refresh runs about every 30 minutes.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            Section("Premium") {
-                val src = when (ent.source) { PremiumSource.AD_UNLOCK -> "Unlocked for 24 hours until ${Units.stamp(ent.unlockUntilMs)}"; PremiumSource.AD_FREE_PURCHASE -> "Ad-free purchase active"; PremiumSource.SUBSCRIPTION -> "Subscription active"; PremiumSource.NONE -> "Free (supported by ads)" }
-                SettingRow(Icons.Outlined.WorkspacePremium, "Premium status", src, onPremium)
+            Section("Unlock") {
+                val src = when (ent.source) { PremiumSource.AD_UNLOCK -> "Unlocked for 24 hours until ${Units.stamp(ent.unlockUntilMs)}"; PremiumSource.AD_FREE_PURCHASE -> "Ad-free purchase active"; PremiumSource.SUBSCRIPTION -> "Subscription active"; PremiumSource.NONE -> "Locked" }
+                SettingRow(Icons.Outlined.WorkspacePremium, "Unlock status", src, onPremium)
             }
             Section("Privacy & data") {
                 if (activity != null && vm.mon.privacyOptionsRequired(ctx)) SettingRow(Icons.Outlined.PrivacyTip, "Ad privacy choices", "Review or change your ad consent.") { vm.mon.showPrivacyOptions(activity) }
@@ -91,30 +90,39 @@ fun SettingRow(icon: androidx.compose.ui.graphics.vector.ImageVector, title: Str
     }
 }
 
+/**
+ * The unlock screen. With [onBack] == null it is the app's gate: nothing else in the app is reachable until the user watches
+ * four ads (24 hours of use), buys the ad-free version, or subscribes. With a back action it is the status page opened from Settings.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PaywallScreen(vm: AppViewModel, onBack: () -> Unit) {
+fun PaywallScreen(vm: AppViewModel, onBack: (() -> Unit)?) {
     val ent by vm.mon.state.collectAsState()
     val ctx = LocalContext.current
     val activity = ctx as Activity
     LaunchedEffect(Unit) { vm.mon.startBilling(); vm.mon.loadRewarded() }
-    Scaffold(topBar = { TopAppBar(title = { Text("Premium") }, navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back") } }) }) { pad ->
-        Column(Modifier.padding(pad).verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+    val canAds = vm.mon.canRequestAds(ctx)
+    Scaffold(topBar = {
+        if (onBack != null) TopAppBar(title = { Text("Unlock status") }, navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back") } })
+    }) { pad ->
+        Column(Modifier.padding(pad).verticalScroll(rememberScrollState()).statusBarsPadding().padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            if (onBack == null) {
+                Icon(Icons.Filled.Lock, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(44.dp))
+                Text("Unlock Touch Weather Tracker", style = MaterialTheme.typography.headlineMedium)
+                Text("Choose how to use the app. Every option unlocks the same complete app.", style = MaterialTheme.typography.bodyLarge)
+            }
             TwCard(container = if (ent.premium) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surface) {
-                Text(if (ent.premium) "Premium is active" else "Touch Weather Tracker is free, supported by ads", style = MaterialTheme.typography.titleMedium)
+                Text(if (ent.premium) "Touch Weather Tracker is unlocked" else "Locked", style = MaterialTheme.typography.titleMedium)
                 Text(when (ent.source) {
                     PremiumSource.AD_UNLOCK -> "Unlocked with ads until ${Units.stamp(ent.unlockUntilMs)}."
-                    PremiumSource.AD_FREE_PURCHASE -> "Thanks for supporting the app with the ad-free purchase."
+                    PremiumSource.AD_FREE_PURCHASE -> "Thanks for buying the app — it's unlocked permanently on this Google account."
                     PremiumSource.SUBSCRIPTION -> "Thanks — your subscription is active."
-                    PremiumSource.NONE -> "Every way to go premium unlocks exactly the same features:"
+                    PremiumSource.NONE -> "Watch ${Monetization.ADS_REQUIRED} short ads for 24 hours of full use, or buy the app, or subscribe to all Mundy Morning apps."
                 }, style = MaterialTheme.typography.bodyMedium)
-                Spacer(Modifier.height(8.dp))
-                PremiumFeature.values().forEach { f -> Row(Modifier.padding(vertical = 3.dp), verticalAlignment = Alignment.Top) { Icon(Icons.Filled.Check, null, tint = Tw.colors.observed, modifier = Modifier.size(20.dp)); Spacer(Modifier.width(8.dp)); Column { Text(f.title, style = MaterialTheme.typography.titleSmall); Text(f.blurb, style = MaterialTheme.typography.bodySmall) } } }
-                Text("Warnings, forecasts, storm information and resources are always free and never behind premium.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 8.dp))
             }
             if (!ent.premium) {
                 TwCard {
-                    Text("Watch ${Monetization.ADS_REQUIRED} ads → 24 hours of premium", style = MaterialTheme.typography.titleSmall)
+                    Text("Watch ${Monetization.ADS_REQUIRED} ads → 24 hours of full use", style = MaterialTheme.typography.titleSmall)
                     LinearProgressIndicator(progress = { ent.adViews / ent.adsRequired.toFloat() }, modifier = Modifier.fillMaxWidth().padding(vertical = 10.dp))
                     Text("${ent.adViews} of ${ent.adsRequired} ads watched", style = MaterialTheme.typography.bodySmall)
                     Spacer(Modifier.height(8.dp))
@@ -122,24 +130,28 @@ fun PaywallScreen(vm: AppViewModel, onBack: () -> Unit) {
                         if (ent.adLoading && !ent.adReady) { CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp); Spacer(Modifier.width(8.dp)) }
                         Text(if (ent.adReady) "Watch an ad" else if (ent.adLoading) "Loading an ad…" else "No ad available")
                     }
+                    if (!canAds) Text("Ads can't be requested until ad consent is completed. Review your choices below, or buy / subscribe instead.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
                     if (!ent.adReady && !ent.adLoading) TextButton(onClick = { vm.mon.startAds(activity); vm.mon.loadRewarded() }) { Text("Try loading an ad again") }
                 }
                 TwCard {
-                    Text("Ad-free purchase", style = MaterialTheme.typography.titleSmall)
-                    Text("One-time purchase. Removes ads and unlocks every premium feature permanently on this Google account.", style = MaterialTheme.typography.bodySmall)
+                    Text("Buy the app", style = MaterialTheme.typography.titleSmall)
+                    Text("One-time purchase. No ads, unlocked permanently on this Google account.", style = MaterialTheme.typography.bodySmall)
                     Spacer(Modifier.height(8.dp))
-                    Button(onClick = { vm.mon.buyAdFree(activity) }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text(ent.adFreePrice?.let { "Buy ad-free · $it" } ?: "Buy ad-free") }
+                    Button(onClick = { vm.mon.buyAdFree(activity) }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text(ent.adFreePrice?.let { "Buy · $it" } ?: "Buy the app") }
                 }
                 TwCard {
-                    Text("All-apps subscription", style = MaterialTheme.typography.titleSmall)
-                    Text("Covers the same premium features here and across the owner's other apps that support it.", style = MaterialTheme.typography.bodySmall)
+                    Text("Subscribe to all apps", style = MaterialTheme.typography.titleSmall)
+                    Text("One subscription that unlocks this app and the owner's other apps that support it.", style = MaterialTheme.typography.bodySmall)
                     Spacer(Modifier.height(8.dp))
                     Button(onClick = { vm.mon.subscribe(activity) }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text(ent.subscriptionPrice?.let { "Subscribe · $it" } ?: "Subscribe") }
                 }
             }
             OutlinedButton(onClick = { vm.mon.restore() }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text("Restore purchases") }
+            if (vm.mon.privacyOptionsRequired(ctx)) TextButton(onClick = { vm.mon.showPrivacyOptions(activity) }, modifier = Modifier.fillMaxWidth()) { Text("Ad privacy choices") }
             ent.message?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary) }
             if (!ent.billingReady) Text("Google Play billing is not connected. Purchases only work on builds installed from Google Play with the products set up (see docs/MONETIZATION.md).", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            if (onBack == null) Text("While the app is locked it does not refresh data or send notifications, so keep Wireless Emergency Alerts turned on in your phone's settings — those government alerts do not depend on this app.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Spacer(Modifier.height(16.dp))
         }
     }
 }

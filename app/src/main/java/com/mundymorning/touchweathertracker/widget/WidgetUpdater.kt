@@ -8,6 +8,7 @@ object WidgetUpdater {
     /** Refresh cached data the widgets read, then redraw them. OS-controlled scheduling means widgets are never "instant". */
     suspend fun updateAll(ctx: Context) {
         val repo = (ctx.applicationContext as TouchWeatherApp).repo
+        if (repo.prefs.premiumActive) {
         val ids = mutableSetOf<String>()
         repo.selected()?.let { ids += it.id }
         repo.places.value.forEach { ids += it.id }
@@ -16,6 +17,7 @@ object WidgetUpdater {
             runCatching { repo.alertsFor(p) }
         }
         runCatching { repo.storms() }
+        }
         EverydayWeatherWidget().updateAll(ctx)
         SavedPlaceWidget().updateAll(ctx)
         StormWatchWidget().updateAll(ctx)

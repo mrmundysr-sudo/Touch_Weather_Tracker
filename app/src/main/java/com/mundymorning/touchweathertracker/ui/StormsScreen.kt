@@ -19,7 +19,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import com.mundymorning.touchweathertracker.billing.PremiumFeature
 import com.mundymorning.touchweathertracker.core.Geo
 import com.mundymorning.touchweathertracker.core.Units
 import com.mundymorning.touchweathertracker.data.Place
@@ -119,14 +118,13 @@ fun StormsScreen(vm: AppViewModel, onOpenStorm: (String) -> Unit) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun StormDetailScreen(vm: AppViewModel, stormId: String, onBack: () -> Unit, onShowOnMap: (ActiveStorm) -> Unit, onOpenPremium: () -> Unit) {
+fun StormDetailScreen(vm: AppViewModel, stormId: String, onBack: () -> Unit, onShowOnMap: (ActiveStorm) -> Unit) {
     val st by vm.storms.collectAsState()
     val bundles by vm.bundles.collectAsState()
     val loading by vm.bundleLoading.collectAsState()
     val reports by vm.reports.collectAsState()
     val places by vm.places.collectAsState()
     val selected by vm.selected.collectAsState()
-    val ent by vm.mon.state.collectAsState()
     val ctx = LocalContext.current
     var reportPlace by remember { mutableStateOf<Place?>(null) }
     val storm = st.storms?.value?.firstOrNull { it.id == stormId }
@@ -192,9 +190,7 @@ fun StormDetailScreen(vm: AppViewModel, stormId: String, onBack: () -> Unit, onS
 
             // Model guidance (separate, labeled)
             Section("Model guidance — not the official forecast") {
-                if (!ent.premium) {
-                    TwCard { Text("Compare GFS and ECMWF tracks with the NHC forecast.", style = MaterialTheme.typography.titleSmall); Text("This is a premium feature (available with 4 ad views for 24 hours, the ad-free purchase, or the subscription).", style = MaterialTheme.typography.bodyMedium); TextButton(onClick = onOpenPremium) { Text("See options") } }
-                } else {
+                run {
                     ModelTrackCard("GFS (NOAA)", bundle?.gfs, bundle?.official, tz)
                     Spacer(Modifier.height(8.dp))
                     if (bundle?.ecmwf != null) ModelTrackCard("ECMWF (European)", bundle.ecmwf, bundle.official, tz)

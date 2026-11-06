@@ -7,7 +7,6 @@ plugins {
 
 val admobAppId: String = providers.gradleProperty("admobAppId").get()
 val admobRewardedUnit: String = providers.gradleProperty("admobRewardedUnit").get()
-val admobBannerUnit: String = providers.gradleProperty("admobBannerUnit").get()
 
 android {
     namespace = "com.mundymorning.touchweathertracker"
@@ -21,7 +20,6 @@ android {
         versionName = "0.1.0"
         manifestPlaceholders["admobAppId"] = admobAppId
         buildConfigField("String", "ADMOB_REWARDED_UNIT", "\"$admobRewardedUnit\"")
-        buildConfigField("String", "ADMOB_BANNER_UNIT", "\"$admobBannerUnit\"")
     }
 
     buildTypes {

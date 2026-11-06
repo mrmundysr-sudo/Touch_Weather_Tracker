@@ -11,7 +11,7 @@ Android `app/src/main/java/.../` is the reference. Port by layer: `source/` (HTT
 - Alerts: warnings only for Home by default; de-dup by id+signature; notify on update and early end; no quiet-hours suppression.
 - Event mode offer: NHC official hurricane-strength forecast crossing a U.S. state within 72 h, or NWS Hurricane Watch/Warning; respect declines; end prompt (Return to normal / Keep).
 - Pets: allowed / not allowed / unknown (never inferred). MassOutage attribution and “unofficial” wording; missing coverage ≠ zero.
-- Premium identical on every route: no ads, model comparison, >3 places. 4 rewarded ads → 24 h. No ad over warnings/emergency content.
+- Monetization: whole app locked until 4 rewarded ads (24 h of use) / purchase / all-apps subscription; no banner ads; identical complete app on every route; locked app does no background work and says to keep WEA on.
 - No server, no paid API/tiles. Cache everything with timestamps.
 
 ## iOS platform adaptations to document when made

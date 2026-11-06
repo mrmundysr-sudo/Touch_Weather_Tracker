@@ -21,7 +21,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
-import com.mundymorning.touchweathertracker.billing.Monetization
 import com.mundymorning.touchweathertracker.data.*
 import com.mundymorning.touchweathertracker.source.CensusSource
 import com.mundymorning.touchweathertracker.source.NwsSource
@@ -50,29 +49,19 @@ fun rememberLocationAction(vm: AppViewModel, asHome: Boolean, onResult: (Place?)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SearchPlaceScreen(vm: AppViewModel, asHome: Boolean, onBack: () -> Unit, onDone: (Place) -> Unit, onOpenPaywall: () -> Unit, onPinOnMap: () -> Unit) {
+fun SearchPlaceScreen(vm: AppViewModel, asHome: Boolean, onBack: () -> Unit, onDone: (Place) -> Unit, onPinOnMap: () -> Unit) {
     val s by vm.search.collectAsState()
     val places by vm.places.collectAsState()
-    val ent by vm.mon.state.collectAsState()
     DisposableEffect(Unit) { onDispose { vm.clearSearch() } }
-    val limitReached = !ent.premium && places.size >= 1 + Monetization.FREE_EXTRA_PLACES && !asHome
     val useLocation = rememberLocationAction(vm, asHome) { p -> if (p != null) onDone(p) }
     Scaffold(topBar = { TopAppBar(title = { Text(if (asHome) "Set Home" else "Add a place") }, navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back") } }) }) { pad ->
         Column(Modifier.padding(pad).padding(16.dp)) {
-            if (limitReached) {
-                TwCard(container = MaterialTheme.colorScheme.tertiaryContainer) {
-                    Text("You've reached the free limit of ${1 + Monetization.FREE_EXTRA_PLACES} places.", style = MaterialTheme.typography.titleSmall)
-                    Text("Premium (watch 4 ads for 24 hours, a one-time ad-free purchase, or a subscription) unlocks more saved places. Weather, alerts and storm information are always free.", style = MaterialTheme.typography.bodyMedium)
-                    TextButton(onClick = onOpenPaywall) { Text("See premium options") }
-                }
-                Spacer(Modifier.height(12.dp))
-            }
-            OutlinedTextField(s.query, vm::onSearchQuery, singleLine = true, enabled = !limitReached, label = { Text("Address, ZIP code or city") },
+            OutlinedTextField(s.query, vm::onSearchQuery, singleLine = true, label = { Text("Address, ZIP code or city") },
                 leadingIcon = { Icon(Icons.Filled.Search, null) }, keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                 supportingText = { Text("Examples: 77002 · Miami, FL · 1600 Pennsylvania Ave NW, Washington DC") }, modifier = Modifier.fillMaxWidth())
             Row(Modifier.padding(vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedButton(onClick = useLocation, enabled = !limitReached, modifier = Modifier.heightIn(min = 48.dp)) { Icon(Icons.Filled.MyLocation, null, Modifier.size(18.dp)); Spacer(Modifier.width(6.dp)); Text("Use my location") }
-                OutlinedButton(onClick = onPinOnMap, enabled = !limitReached, modifier = Modifier.heightIn(min = 48.dp)) { Icon(Icons.Outlined.PinDrop, null, Modifier.size(18.dp)); Spacer(Modifier.width(6.dp)); Text("Drop a pin") }
+                OutlinedButton(onClick = useLocation, modifier = Modifier.heightIn(min = 48.dp)) { Icon(Icons.Filled.MyLocation, null, Modifier.size(18.dp)); Spacer(Modifier.width(6.dp)); Text("Use my location") }
+                OutlinedButton(onClick = onPinOnMap, modifier = Modifier.heightIn(min = 48.dp)) { Icon(Icons.Outlined.PinDrop, null, Modifier.size(18.dp)); Spacer(Modifier.width(6.dp)); Text("Drop a pin") }
             }
             when {
                 s.loading -> Loading(label = "Searching U.S. Census data…")
@@ -84,7 +73,7 @@ fun SearchPlaceScreen(vm: AppViewModel, asHome: Boolean, onBack: () -> Unit, onD
                             headlineContent = { Text(g.label) },
                             supportingContent = { Text(listOfNotNull(g.kind, g.subtitle).joinToString(" · ")) },
                             leadingContent = { Icon(when (g.kind) { "Address" -> Icons.Outlined.Home; "ZIP code" -> Icons.Outlined.Mail; else -> Icons.Outlined.LocationCity }, null) },
-                            modifier = Modifier.clickable(enabled = !limitReached) { vm.addFromResult(g, asHome, onDone) }.heightIn(min = 56.dp),
+                            modifier = Modifier.clickable() { vm.addFromResult(g, asHome, onDone) }.heightIn(min = 56.dp),
                         )
                         HorizontalDivider()
                     }

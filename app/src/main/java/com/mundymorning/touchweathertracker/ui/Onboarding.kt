@@ -31,7 +31,7 @@ fun OnboardingScreen(vm: AppViewModel, onFinished: () -> Unit) {
     BackHandler(enabled = step > 0) { step -= 1 }
     when (step) {
         0 -> Welcome { step = 1 }
-        1 -> SearchPlaceScreen(vm, asHome = true, onBack = { step = 0 }, onDone = { step = 2 }, onOpenPaywall = {}, onPinOnMap = { vm.toast("You can drop a pin from the Map tab after setup. Search by address, ZIP or city for now.") })
+        1 -> SearchPlaceScreen(vm, asHome = true, onBack = { step = 0 }, onDone = { step = 2 }, onPinOnMap = { vm.toast("You can drop a pin from the Map tab after setup. Search by address, ZIP or city for now.") })
         2 -> NotificationsStep(vm, onNext = { step = 3 })
         else -> Ready(vm, onFinished)
     }
