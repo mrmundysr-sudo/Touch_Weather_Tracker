@@ -129,8 +129,10 @@ struct SearchPlaceView: View {
                 ForEach(s.results) { g in
                     Button { Task { busy = true; _ = await model.addFromResult(g, asHome: asHome); busy = false; finish() } } label: {
                         HStack { Image(systemName: g.kind == "Address" ? "house" : g.kind == "ZIP code" ? "envelope" : "building.2").frame(width: 28)
-                            VStack(alignment: .leading) { Text(g.label).font(.headline); Text([g.kind, g.subtitle].compactMap { $0 }.joined(separator: " · ")).font(.caption).foregroundStyle(Tw.onSurfaceMuted) } }
-                    }.buttonStyle(.plain).frame(minHeight: 44)
+                            VStack(alignment: .leading) { Text(g.label).font(.headline); Text([g.kind, g.subtitle].compactMap { $0 }.joined(separator: " · ")).font(.caption).foregroundStyle(Tw.onSurfaceMuted) }
+                            Spacer() }
+                            .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading).contentShape(Rectangle())   // the whole row is tappable, not just the text
+                    }.buttonStyle(.plain)
                 }
             }
             Section { Text("Searches use free U.S. Census Bureau services. Your search text is sent to the Census Bureau; nothing is sent to any other party.").font(.caption).foregroundStyle(Tw.onSurfaceMuted) }
@@ -159,10 +161,10 @@ struct FavoritesPickerView: View {
                 if let e = error { ErrorState(message: e) { load(st) } }
                 else if counties == nil { LoadingView() }
                 ForEach(counties ?? [], id: \.fips) { c in
-                    Button(c.name) { model.repo.addFavorite(FavoriteArea(id: "CO:\(c.fips)", label: "\(c.name), \(st)", state: st, countyFips: c.fips)); model.toast("Following \(c.name), \(st)"); dismiss() }.frame(minHeight: 44)
+                    Button { model.repo.addFavorite(FavoriteArea(id: "CO:\(c.fips)", label: "\(c.name), \(st)", state: st, countyFips: c.fips)); model.toast("Following \(c.name), \(st)"); dismiss() } label: { Text(c.name).frame(maxWidth: .infinity, minHeight: 44, alignment: .leading).contentShape(Rectangle()) }
                 }
             } else {
-                ForEach(NwsSource.allStates, id: \.abbr) { s in Button { state = s.abbr; load(s.abbr) } label: { HStack { Text(s.name); Spacer(); Image(systemName: "chevron.right").foregroundStyle(.secondary) } }.frame(minHeight: 44) }
+                ForEach(NwsSource.allStates, id: \.abbr) { s in Button { state = s.abbr; load(s.abbr) } label: { HStack { Text(s.name); Spacer(); Image(systemName: "chevron.right").foregroundStyle(.secondary) }.frame(maxWidth: .infinity, minHeight: 44).contentShape(Rectangle()) } }
             }
         }
         .navigationTitle(state.map(NwsSource.stateName) ?? "Choose a state").navigationBarTitleDisplayMode(.inline)
