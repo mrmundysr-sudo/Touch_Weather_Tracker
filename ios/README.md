@@ -19,11 +19,25 @@ Shared logic tests: `cd ios/TWCore && swift test` (`--filter ParserTests|Reposit
 `.github/workflows/ios-build.yml` (macOS runner) runs the offline TWCore tests, generates the project, builds for the iOS Simulator and for device **unsigned**, and uploads
 `Touch-Weather-Tracker-ios-<run>` (unsigned `.ipa`, simulator `.app.zip`) plus build logs. Nothing is signed, published or submitted.
 
-## Installing on a device (owner action)
-An unsigned `.ipa` cannot be installed on an iPhone as-is: iOS requires Apple signing. The owner (who holds the Apple Developer account) must sign it — e.g. in Xcode set the
-Team on both targets and run on a device, or re-sign the IPA — and enable the App Group `group.com.mundymorning.touchweathertracker` for both bundle ids
-(`com.mundymorning.touchweathertracker` and `…widgets`). Without the App Group, widgets cannot read the app's data (the app says so in Settings).
-The simulator `.app.zip` can be run in the iOS Simulator on a Mac without any signing.
+## Installing on a device with working widgets (owner action)
+An unsigned `.ipa` cannot be installed as-is, and a re-signed IPA that lacks the App Group makes the widgets unable to read the app's data (Settings shows a red notice). Requires a paid Apple Developer Program account.
+
+**One-time setup in the Apple Developer portal (developer.apple.com > Certificates, Identifiers & Profiles)**
+1. Identifiers > "+" > **App Groups** > register `group.com.mundymorning.touchweathertracker`.
+2. Identifiers > "+" > **App IDs** > App: `com.mundymorning.touchweathertracker`; enable **App Groups** and Configure it to select the group above.
+3. Same for the widget extension App ID `com.mundymorning.touchweathertracker.widgets` (App Groups enabled, same group).
+4. Register your iPhone under Devices (UDID) if you use development signing.
+
+**Build and install from a Mac (simplest)**
+1. `brew install xcodegen`, then in `ios/` run `xcodegen generate` and open `TouchWeatherTracker.xcodeproj`.
+2. Select the **TouchWeatherTracker** target > Signing & Capabilities > pick your Team; repeat for **TouchWeatherWidgets**. Xcode's automatic signing creates the profiles and keeps the App Group (already declared in the entitlements files generated from `project.yml`).
+3. Choose your iPhone and Run. Delete any older copy first. Then long-press the Home Screen > "+" > Touch Weather Tracker to add widgets.
+
+**Re-signing the CI IPA instead**
+Sign with a provisioning profile for each bundle id that includes the App Group (the main app's and the `.widgets` extension's, embedded in the `.appex` under `PlugIns/`), and sign the extension and app with entitlements containing `com.apple.security.application-groups = group.com.mundymorning.touchweathertracker`. A tool that signs everything with one profile or strips entitlements will reproduce the "no App Group" notice.
+
+**Check it worked:** Settings > About no longer shows the red App Group notice. Widgets show your Home place after the app has opened once.
+The simulator `.app.zip` can be run in the iOS Simulator on a Mac without signing (the simulator has no App Group restriction).
 
 ## What the owner must configure before any release
 See [../docs/MONETIZATION.md](../docs/MONETIZATION.md): AdMob app id (Info.plist `GADApplicationIdentifier`) and rewarded unit (`Monetization.rewardedUnit`) — Google test ids are used now — and App Store Connect products
